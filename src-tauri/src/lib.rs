@@ -17,12 +17,31 @@ fn greet(name: &str) -> String {
 
 // --- OSC: send a message to Ableton ---
 #[tauri::command]
-fn send_osc(address: String, args: Vec<i32>) -> Result<(), String> {
+fn send_osc(address: String, args: Vec<serde_json::Value>) -> Result<(), String> {
     let socket = UdpSocket::bind("0.0.0.0:0").map_err(|e| e.to_string())?;
+
+    // Map JSON values explicitly using your project's native serde_json crate
+    let osc_args: Vec<OscType> = args
+        .into_iter()
+        .map(|v| match v {
+            serde_json::Value::String(s) => OscType::String(s),
+            serde_json::Value::Number(n) => {
+                if let Some(i) = n.as_i64() {
+                    OscType::Int(i as i32)
+                } else if let Some(f) = n.as_f64() {
+                    OscType::Float(f as f32)
+                } else {
+                    OscType::Nil
+                }
+            }
+            serde_json::Value::Bool(b) => OscType::Bool(b),
+            _ => OscType::Nil,
+        })
+        .collect();
 
     let msg = OscMessage {
         addr: address,
-        args: args.into_iter().map(OscType::Int).collect(),
+        args: osc_args,
     };
 
     let packet = OscPacket::Message(msg);

@@ -19,6 +19,6 @@ export function useOscListener(onMessage: (msg: OscMessage) => void) {
     }, [onMessage]);
 }
 
-export function sendOsc(address: string, args: number[]) {
+export function sendOsc(address: string, args: unknown[]) {
     return invoke("send_osc", { address, args });
 }
