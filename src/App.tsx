@@ -1,11 +1,14 @@
-import {useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import "./App.css";
+import {sendOsc, useOscListener} from "./hooks/useOsc.ts";
 import {Song} from "@/interfaces/song.ts";
 import {SongSelector} from "@/components/SongSelector/SongSelector.tsx";
 import {SectionSelector} from "@/components/SectionSelector/SectionSelector.tsx";
 import {ViewSelector} from "@/components/ViewSelector/ViewSelector.tsx";
 import {SongSection} from "@/interfaces/song-section.ts";
 import {ViewType} from "@/interfaces/view-type.ts";
+import {useSetlist} from "@/hooks/useSetlist.ts";
+import {useSceneSelection} from "@/hooks/useSceneSelection.ts";
 const initialSetlist: Song[] = [
   {
     name: "Enter Sandman",
@@ -23,10 +26,25 @@ const initialSetlist: Song[] = [
 
 
 function App() {
-  const [setlist] = useState<Song[]>(initialSetlist);
+
+
+  // const [setlist] = useState<Song[]>(initialSetlist);
   const [selectedSong, setSelectedSong] = useState<Song>(initialSetlist[0]);
   const [currentSection, setCurrentSection] = useState<SongSection>(initialSetlist[0].structure[0]);
   const [currentView, setCurrentView] = useState<ViewType>('Title');
+
+  const setlist = useSetlist()
+  useSceneSelection((songName) => {
+    const song = setlist.find(song => song.name === songName)
+    if (song) {
+      setSelectedSong(song)
+    }
+  });
+
+  useEffect(() => {
+    console.log(`jumping to ${selectedSong.name}`);
+    sendOsc(`/live/song/cue_point/jump`, [selectedSong.name])
+  }, [selectedSong]);
 
   // Automatically reset to the first section when swapping songs
   const handleSongSelect = (song: Song) => {
