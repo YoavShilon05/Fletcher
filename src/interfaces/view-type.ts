@@ -1,0 +1,1 @@
+export type ViewType = 'Title' | 'Click' | 'Chords' | 'Chart';

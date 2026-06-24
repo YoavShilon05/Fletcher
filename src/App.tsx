@@ -1,72 +1,92 @@
-import {useCallback, useState} from "react";
-import reactLogo from "./assets/react.svg";
-import { invoke } from "@tauri-apps/api/core";
+import {useState} from "react";
 import "./App.css";
-import {sendOsc, useOscListener} from "./hooks/useOsc.ts";
+import {Song} from "@/interfaces/song.ts";
+import {SongSelector} from "@/components/SongSelector/SongSelector.tsx";
+import {SectionSelector} from "@/components/SectionSelector/SectionSelector.tsx";
+import {ViewSelector} from "@/components/ViewSelector/ViewSelector.tsx";
+import {SongSection} from "@/interfaces/song-section.ts";
+import {ViewType} from "@/interfaces/view-type.ts";
+const initialSetlist: Song[] = [
+  {
+    name: "Enter Sandman",
+    bpm: 123,
+    key: "Em",
+    structure: [{ name: "Intro" }, { name: "Verse 1" }, { name: "Chorus" }, { name: "Guitar Solo" }, { name: "Outro" }]
+  },
+  {
+    name: "Comfortably Numb",
+    bpm: 63,
+    key: "Bm",
+    structure: [{ name: "Intro" }, { name: "Verse" }, { name: "Chorus" }, { name: "Solo 1" }, { name: "Solo 2" }]
+  }
+];
+
 
 function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+  const [setlist] = useState<Song[]>(initialSetlist);
+  const [selectedSong, setSelectedSong] = useState<Song>(initialSetlist[0]);
+  const [currentSection, setCurrentSection] = useState<SongSection>(initialSetlist[0].structure[0]);
+  const [currentView, setCurrentView] = useState<ViewType>('Title');
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke("greet", { name }));
-  }
-
-  const [messages, setMessages] = useState<string[]>([]);
-
-  const handleMessage = useCallback((msg: { address: string; args: string[] }) => {
-      setMessages((prev) => [...prev, `${msg.address} — ${msg.args.join(", ")}`]);
-  }, []);
-
-  useOscListener(handleMessage);
-
-  const handleQuery = () => {
-      // track 0, clip 0
-      sendOsc("/live/clip/get/name", [0, 0]);
+  // Automatically reset to the first section when swapping songs
+  const handleSongSelect = (song: Song) => {
+    setSelectedSong(song);
+    if (song.structure?.length > 0) {
+      setCurrentSection(song.structure[0]);
+    }
   };
 
+  return (
+    <div className="h-screen w-screen bg-background text-foreground flex flex-col overflow-hidden">
 
+      {/* 1. Header Layer */}
+      <header className="flex items-center justify-center py-6 shrink-0 border-b border-border/20">
+        <h1 className="text-white font-mono text-xl select-none">
+          Now playing: {selectedSong.name}
+        </h1>
+      </header>
 
-    return (
-    <main className="container">
-      <h1>Welcome to Tauri + React</h1>
+      {/* 2. Main Workspace (Grid layout preventing vertical overflows) */}
+      <main className="flex-1 grid grid-cols-[auto_1fr_auto] min-h-0 w-full">
 
-      <div className="row">
-        <a href="https://vite.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
-      <div>
-        <button onClick={handleQuery}>Get Clip Name</button>
-        <ul>
-          {messages.map((m, i) => <li key={i}>{m}</li>)}
-        </ul>
-      </div>
+        {/* Left Side: Stretched & vertically aligned Section Selector */}
+        <div className="h-full flex items-center border-r border-border/40">
+          <SectionSelector
+            selectedSong={selectedSong}
+            currentSection={currentSection}
+            onSectionSelect={setCurrentSection}
+          />
+        </div>
 
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
+        {/* Center Canvas: Dynamic presentation area */}
+        <div className="flex items-center justify-center p-6 min-h-0 overflow-y-auto">
+          <div className="font-mono text-center opacity-80">
+            {/* Dynamic View rendering container depending on currentView */}
+            <p className="text-sm text-card-foreground uppercase tracking-widest mb-2">{currentView} View</p>
+            <p className="text-2xl font-bold text-primary">{currentSection?.name}</p>
+          </div>
+        </div>
+
+        {/* Right Side: Containerless View Buttons centered perfectly */}
+        <div className="h-full flex items-center px-4 border-l border-border/40">
+          <ViewSelector
+            currentView={currentView}
+            onViewChange={setCurrentView}
+          />
+        </div>
+
+      </main>
+
+      {/* 3. Footer Carousel Selector */}
+      <footer className="w-full shrink-0">
+        <SongSelector
+          setlist={setlist}
+          selectedSong={selectedSong}
+          onSelect={handleSongSelect}
         />
-        <button type="submit">Greet</button>
-      </form>
-      <p>{greetMsg}</p>
-    </main>
+      </footer>
+
+    </div>
   );
 }
 
