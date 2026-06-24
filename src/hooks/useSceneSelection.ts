@@ -18,7 +18,6 @@ export const useSceneSelection = (setSelectedSong: (songName: string) => void) =
 
     switch (msg.address) {
       case "/live/view/get/selected_scene":
-        console.log("SELECT SCENEEEEEE")
         const payloadSceneIndex = payload[0] as number;
         const scene = scenes[payloadSceneIndex];
 
@@ -48,11 +47,6 @@ export const useSceneSelection = (setSelectedSong: (songName: string) => void) =
         setScenes(payloadScenes)
         break;
     }
-
-    // if (msg.address !== "/live/song/get/selected_scene") return;
-    // const payload = parseOscPayload(msg.args)
-    // console.log("PAYLOAD", payload)
-
   }, []);
 
   useOscListener(handleMessage);

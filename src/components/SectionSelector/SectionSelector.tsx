@@ -1,20 +1,21 @@
 import React from 'react';
 import { Play } from 'lucide-react';
-import {Song} from "@/interfaces/song.ts";
 import {SongSection} from "@/interfaces/song-section.ts";
+import {useAtomValue} from "jotai";
+import {selectedSongAtom} from "@/stores/store.ts";
 
 interface SectionSelectorProps {
-  selectedSong: Song;
   currentSection?: SongSection;
   onSectionSelect?: (section: SongSection) => void;
 }
 
 export const SectionSelector: React.FC<SectionSelectorProps> = ({
-                                                                  selectedSong,
                                                                   currentSection,
                                                                   onSectionSelect,
                                                                 }) => {
-  const structure = selectedSong?.structure || [];
+
+  const selectedSong = useAtomValue(selectedSongAtom)
+  const structure = selectedSong?.structure || []
 
   return (
     <aside className="w-48 h-full flex flex-col bg-background border-r border-border font-mono p-4 select-none">
@@ -29,7 +30,7 @@ export const SectionSelector: React.FC<SectionSelectorProps> = ({
         <div className="absolute left-2.5 top-4 bottom-4 w-[1px] bg-border/60 pointer-events-none" />
 
         {structure.map((section, idx) => {
-          const isActive = currentSection?.name === section.name;
+          const isActive = currentSection?.timelineLocation === section.timelineLocation;
 
           return (
             <button

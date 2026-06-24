@@ -1,22 +1,22 @@
-import React, { useRef, useEffect } from 'react';
+import {useRef, useEffect} from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SongCard } from './SongCard';
-import {Song} from "@/interfaces/song.ts";
+import {useAtom, useAtomValue} from "jotai";
+import {selectedSongAtom, setlistAtom} from "@/stores/store.ts";
 
-interface SongSelectorProps {
-  setlist: Song[];
-  selectedSong: Song;
-  onSelect: (song: Song) => void;
-}
 
-export const SongSelector: React.FC<SongSelectorProps> = ({ setlist, selectedSong, onSelect }) => {
+export const SongSelector = () => {
   const trackRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const currentIndex = setlist.findIndex((s) => s.name === selectedSong.name && s.key === selectedSong.key);
+
+  const [selectedSong, setSelectedSong] = useAtom(selectedSongAtom);
+  const setlist = useAtomValue(setlistAtom)
+  const currentIndex = setlist?.findIndex((s) => s.name === selectedSong?.name) || 0;
 
   const handleSelectIndex = (index: number) => {
-    if (index >= 0 && index < setlist.length) onSelect(setlist[index]);
+    if (!setlist) return;
+    if (index >= 0 && index < setlist.length) setSelectedSong(setlist[index]);
   };
 
   useEffect(() => {
@@ -25,6 +25,7 @@ export const SongSelector: React.FC<SongSelectorProps> = ({ setlist, selectedSon
 
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
+      if (!setlist) return;
       if (e.deltaY > 0 || e.deltaX > 0) {
         if (currentIndex < setlist.length - 1) handleSelectIndex(currentIndex + 1);
       } else {
@@ -59,7 +60,7 @@ export const SongSelector: React.FC<SongSelectorProps> = ({ setlist, selectedSon
         <span>Setlist</span>
         <div className="flex items-center gap-1.5 text-xs text-primary">
           <div className="w-1.5 h-1.5 rounded-full bg-primary animate-juke-blink" />
-          <span className="font-mono text-[11px] tracking-wide uppercase">{selectedSong.name}</span>
+          <span className="font-mono text-[11px] tracking-wide uppercase">{selectedSong?.name}</span>
         </div>
       </div>
 
@@ -71,7 +72,7 @@ export const SongSelector: React.FC<SongSelectorProps> = ({ setlist, selectedSon
 
         <div ref={trackRef} className="flex items-center gap-2.5 py-1.5 overflow-x-auto no-scrollbar scroll-smooth">
           <div className="shrink-0 w-[calc(50%-63px)]" />
-          {setlist.map((song, idx) => {
+          {setlist && setlist.map((song, idx) => {
             const diff = Math.abs(idx - currentIndex);
             const status = idx === currentIndex ? 'selected' : diff === 1 ? 'adjacent' : 'default';
 
@@ -98,14 +99,14 @@ export const SongSelector: React.FC<SongSelectorProps> = ({ setlist, selectedSon
         </Button>
 
         <span className="font-mono text-xs text-card-foreground min-w-[50px] text-center">
-          {currentIndex + 1} / {setlist.length}
+          {currentIndex + 1} / {setlist?.length ?? "??"}
         </span>
 
         <Button
           variant="outline"
           size="icon"
           onClick={() => handleSelectIndex(currentIndex + 1)}
-          disabled={currentIndex === setlist.length - 1}
+          disabled={!setlist || currentIndex === setlist.length - 1}
           className="h-7 w-7 rounded-full border-border text-card-foreground bg-transparent"
         >
           <ChevronRight className="h-4 w-4" />
