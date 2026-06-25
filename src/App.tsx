@@ -4,12 +4,11 @@ import {sendOsc} from "./hooks/useOsc.ts";
 import {SongSelector} from "@/components/SongSelector/SongSelector.tsx";
 import {SectionSelector} from "@/components/SectionSelector/SectionSelector.tsx";
 import {ViewSelector} from "@/components/ViewSelector/ViewSelector.tsx";
-import {SongSection} from "@/interfaces/song-section.ts";
 import {ViewType} from "@/interfaces/view-type.ts";
 import {useSetlist} from "@/hooks/useSetlist.ts";
 import {useSceneSelection} from "@/hooks/useSceneSelection.ts";
 import {useAtom} from "jotai";
-import {selectedSongAtom} from "@/stores/store.ts";
+import {currentSectionAtom, selectedSongAtom} from "@/stores/store.ts";
 
 
 function App() {
@@ -17,7 +16,7 @@ function App() {
 
   // const [setlist] = useState<Song[]>(initialSetlist);
   const [selectedSong, setSelectedSong] = useAtom(selectedSongAtom);
-  const [currentSection, setCurrentSection] = useState<SongSection>();
+  const [currentSection, setCurrentSection] = useAtom(currentSectionAtom);
   const [currentView, setCurrentView] = useState<ViewType>('Title');
 
   const setlist = useSetlist()

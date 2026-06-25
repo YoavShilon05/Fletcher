@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useState} from "react";
+import {useEffect, useState} from "react";
 import {sendOsc, useOscListener} from "@/hooks/useOsc.ts";
 import {parseOscPayload} from "@/utils/parse-osc-payload.ts";
 import {Scene} from "@/interfaces/scene.ts";
@@ -13,7 +13,7 @@ export const useSceneSelection = (setSelectedSong: (songName: string) => void) =
     sendOsc("/live/song/start_listen/scenes", [])
   }, []);
 
-  const handleMessage = useCallback((msg: { address: string; args: string[] }) => {
+  const handleMessage = (msg: { address: string; args: string[] }) => {
     const payload = parseOscPayload<(number | string)[]>(msg.args)
 
     switch (msg.address) {
@@ -47,7 +47,7 @@ export const useSceneSelection = (setSelectedSong: (songName: string) => void) =
         setScenes(payloadScenes)
         break;
     }
-  }, []);
+  };
 
   useOscListener(handleMessage);
 

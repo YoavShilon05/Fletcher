@@ -3,6 +3,7 @@ import { Play } from 'lucide-react';
 import {SongSection} from "@/interfaces/song-section.ts";
 import {useAtomValue} from "jotai";
 import {selectedSongAtom} from "@/stores/store.ts";
+import {useSectionJumps} from "@/hooks/useSectionJumps.ts";
 
 interface SectionSelectorProps {
   currentSection?: SongSection;
@@ -16,6 +17,7 @@ export const SectionSelector: React.FC<SectionSelectorProps> = ({
 
   const selectedSong = useAtomValue(selectedSongAtom)
   const structure = selectedSong?.structure || []
+  useSectionJumps()
 
   return (
     <aside className="w-48 h-full flex flex-col bg-background border-r border-border font-mono p-4 select-none">
