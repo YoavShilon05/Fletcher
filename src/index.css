@@ -33,6 +33,7 @@
     --color-secondary: var(--secondary);
     --color-primary-foreground: var(--primary-foreground);
     --color-primary: var(--primary);
+    --color-success: var(--success);
     --color-popover-foreground: var(--popover-foreground);
     --color-popover: var(--popover);
     --color-card-foreground: var(--card-foreground);
@@ -88,6 +89,8 @@
   --ring: oklch(0.65 0.22 42);                 /* Orange focus ring */
 
   --radius: 0.25rem;                           /* Tighter corners for the hardware feel */
+
+  --success: oklch(0.69 0.21 146);
 
   /* Custom extra hardware variables */
   --juke-glow: rgba(255, 107, 53, 0.35);

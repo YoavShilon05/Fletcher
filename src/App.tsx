@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import {ReactNode, useEffect, useMemo, useState} from "react";
 import "./App.css";
 import {sendOsc} from "./hooks/useOsc.ts";
 import {SongSelector} from "@/components/SongSelector/SongSelector.tsx";
@@ -11,6 +11,7 @@ import {useAtom, useSetAtom} from "jotai";
 import {currentlyPlayingAtom, currentSectionAtom, selectedSongAtom} from "@/stores/store.ts";
 import {usePropertyListener} from "@/hooks/usePropertyListener.ts";
 import {useAutoStop} from "@/hooks/useAutoStop.ts";
+import {TitleView} from "@/components/Views/TitleView/TitleView.tsx";
 
 
 function App() {
@@ -55,6 +56,14 @@ function App() {
     setSelectedSong(setlistReference);
   }, [setlist]);
 
+  const VIEW_MAP: Record<ViewType, ReactNode> = {
+    Title: <TitleView />,
+    Click: <TitleView />,
+    Chords: <TitleView />,
+    Chart: <TitleView />,
+  } as const
+
+  const viewComponent = useMemo(() => VIEW_MAP[currentView], [currentView])
 
   return (
     <div className="h-screen w-screen bg-background text-foreground flex flex-col overflow-hidden">
@@ -76,11 +85,12 @@ function App() {
 
         {/* Center Canvas: Dynamic presentation area */}
         <div className="flex items-center justify-center p-6 min-h-0 overflow-y-auto">
-          <div className="font-mono text-center opacity-80">
-            {/* Dynamic View rendering container depending on currentView */}
-            <p className="text-sm text-card-foreground uppercase tracking-widest mb-2">{currentView} View</p>
-            <p className="text-2xl font-bold text-primary">{currentSection?.name}</p>
-          </div>
+          {viewComponent}
+          {/*<div className="font-mono text-center opacity-80">*/}
+          {/*  /!* Dynamic View rendering container depending on currentView *!/*/}
+          {/*  <p className="text-sm text-card-foreground uppercase tracking-widest mb-2">{viewComponent}</p>*/}
+          {/*  <p className="text-2xl font-bold text-primary">{currentSection?.name}</p>*/}
+          {/*</div>*/}
         </div>
 
         {/* Right Side: Containerless View Buttons centered perfectly */}

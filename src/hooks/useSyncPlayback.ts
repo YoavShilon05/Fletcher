@@ -1,26 +1,14 @@
 import {usePropertyListener} from "@/hooks/usePropertyListener.ts";
-import {useAtom, useAtomValue, useSetAtom} from "jotai";
-import {currentSectionAtom, selectedSongAtom, setlistAtom} from "@/stores/store.ts";
-import {useMemo} from "react";
+import {useAtom, useSetAtom} from "jotai";
+import {currentSectionAtom, selectedSongAtom} from "@/stores/store.ts";
+import {useNextSong} from "@/hooks/useNextSong.ts";
 
 export const useSyncPlayback = () => {
 
-  const setlist = useAtomValue(setlistAtom);
   const [selectedSong, setSelectedSong] = useAtom(selectedSongAtom)
   const setCurrentSection = useSetAtom(currentSectionAtom);
 
-  const nextSong = useMemo(
-    () => {
-      if (!setlist) return undefined;
-      const currIndex = setlist.findIndex((song) => song == selectedSong)
-      if (currIndex < setlist.length - 1) {
-        return setlist[currIndex + 1];
-      }
-      return null;
-    },
-
-    [setlist, selectedSong]
-  )
+  const nextSong = useNextSong()
   
   const trackPlayback = (payload: number[]) => {
     if (!selectedSong) return;
