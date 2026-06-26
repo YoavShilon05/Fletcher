@@ -16,17 +16,17 @@ export const useSyncPlayback = () => {
       if (currIndex < setlist.length - 1) {
         return setlist[currIndex + 1];
       }
-      return selectedSong;
+      return null;
     },
 
     [setlist, selectedSong]
   )
   
   const trackPlayback = (payload: number[]) => {
-    if (!selectedSong || !nextSong) return;
+    if (!selectedSong) return;
     const timelineLocation = payload[0]
 
-    const passedSong = timelineLocation >=  nextSong.timelineLocation
+    const passedSong = !!nextSong && timelineLocation >=  nextSong.timelineLocation
     if (passedSong) {
       setSelectedSong(nextSong);
     } else {
