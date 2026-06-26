@@ -1,23 +1,29 @@
-import React from 'react';
 import { Play } from 'lucide-react';
+import {useAtom, useAtomValue} from "jotai";
+import {currentSectionAtom, selectedSongAtom, snapSelectionAtom} from "@/stores/store.ts";
+import {useSnapSelection} from "@/hooks/useSnapSelection.ts";
+import {Toggle} from "@/components/ui/toggle.tsx";
 import {SongSection} from "@/interfaces/song-section.ts";
-import {useAtomValue} from "jotai";
-import {selectedSongAtom} from "@/stores/store.ts";
-import {useSectionJumps} from "@/hooks/useSectionJumps.ts";
+import {sendOsc} from "@/hooks/useOsc.ts";
+import {useSyncPlayback} from "@/hooks/useSyncPlayback.ts";
 
-interface SectionSelectorProps {
-  currentSection?: SongSection;
-  onSectionSelect?: (section: SongSection) => void;
-}
-
-export const SectionSelector: React.FC<SectionSelectorProps> = ({
-                                                                  currentSection,
-                                                                  onSectionSelect,
-                                                                }) => {
+export const SongStructure = () => {
 
   const selectedSong = useAtomValue(selectedSongAtom)
+  const [snapSelection, setSnapSelection] = useAtom(snapSelectionAtom)
+  const [currentSection, setCurrentSection] = useAtom(currentSectionAtom);
   const structure = selectedSong?.structure || []
-  useSectionJumps()
+
+  useSnapSelection()
+  useSyncPlayback()
+
+  const onSectionSelect = (section: SongSection): void => {
+    setCurrentSection(section)
+    if (snapSelection && currentSection) {
+      sendOsc(`/live/song/jump_by`, [section.timelineLocation - currentSection.timelineLocation]);
+    }
+    sendOsc(`/live/song/set/start_time`, [section.timelineLocation]);
+  }
 
   return (
     <aside className="w-48 h-full flex flex-col bg-background border-r border-border font-mono p-4 select-none">
@@ -25,6 +31,14 @@ export const SectionSelector: React.FC<SectionSelectorProps> = ({
       <div className="text-[10px] tracking-widest uppercase text-card-foreground mb-4">
         Structure
       </div>
+      <Toggle
+        pressed={snapSelection}
+        onPressedChange={setSnapSelection}
+        className="my-5 data-[state=on]:bg-primary data-[state=on]:text-white border-primary shadow-[0_0_8px_var(--juke-glow)]"
+        variant="outline"
+      >
+        Snap Timeline
+      </Toggle>
 
       {/* Dynamic spaced out vertical track */}
       <div className="flex-1 flex flex-col justify-evenly relative py-2">

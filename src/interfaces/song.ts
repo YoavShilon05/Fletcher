@@ -5,5 +5,6 @@ export interface Song {
   bpm: number;
   key?: string;
   structure: SongSection[];
-  timelineLocation: number
+  timelineLocation: number;
+  end?: number;
 }

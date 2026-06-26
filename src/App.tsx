@@ -2,13 +2,15 @@ import {useEffect, useState} from "react";
 import "./App.css";
 import {sendOsc} from "./hooks/useOsc.ts";
 import {SongSelector} from "@/components/SongSelector/SongSelector.tsx";
-import {SectionSelector} from "@/components/SectionSelector/SectionSelector.tsx";
+import {SongStructure} from "@/components/SongStructure/SongStructure.tsx";
 import {ViewSelector} from "@/components/ViewSelector/ViewSelector.tsx";
 import {ViewType} from "@/interfaces/view-type.ts";
 import {useSetlist} from "@/hooks/useSetlist.ts";
 import {useSceneSelection} from "@/hooks/useSceneSelection.ts";
-import {useAtom} from "jotai";
-import {currentSectionAtom, selectedSongAtom} from "@/stores/store.ts";
+import {useAtom, useSetAtom} from "jotai";
+import {currentlyPlayingAtom, currentSectionAtom, selectedSongAtom} from "@/stores/store.ts";
+import {usePropertyListener} from "@/hooks/usePropertyListener.ts";
+import {useAutoStop} from "@/hooks/useAutoStop.ts";
 
 
 function App() {
@@ -16,16 +18,16 @@ function App() {
 
   // const [setlist] = useState<Song[]>(initialSetlist);
   const [selectedSong, setSelectedSong] = useAtom(selectedSongAtom);
+  const setlist = useSetlist()
   const [currentSection, setCurrentSection] = useAtom(currentSectionAtom);
+  const setIsPlaying = useSetAtom(currentlyPlayingAtom);
   const [currentView, setCurrentView] = useState<ViewType>('Title');
 
-  const setlist = useSetlist()
-  useSceneSelection((songName) => {
-    const song = setlist?.find(song => song.name === songName)
-    if (song) {
-      setSelectedSong(song)
-    }
-  });
+  usePropertyListener("/live/song/start_listen/is_playing", "/live/song/get/is_playing", (isPlaying: boolean[]) => {
+    setIsPlaying(isPlaying[0]);
+  })
+  useAutoStop()
+  useSceneSelection();
 
   useEffect(() => {
     if (!setlist || setlist.length === 0) {
@@ -43,7 +45,7 @@ function App() {
 
     if (!selectedSong) return;
 
-    sendOsc(`/live/song/cue_point/jump`, [selectedSong.name])
+    sendOsc(`/live/song/set/start_time`, [selectedSong.timelineLocation])
   }, [selectedSong]);
 
   useEffect(() => {
@@ -69,10 +71,7 @@ function App() {
 
         {/* Left Side: Stretched & vertically aligned Section Selector */}
         <div className="h-full flex items-center border-r border-border/40">
-          <SectionSelector
-            currentSection={currentSection}
-            onSectionSelect={setCurrentSection}
-          />
+          <SongStructure/>
         </div>
 
         {/* Center Canvas: Dynamic presentation area */}
