@@ -1,7 +1,7 @@
 import {ReactNode, useRef} from "react";
 import {usePropertyListener} from "@/hooks/usePropertyListener.ts";
 import {useAtomValue} from "jotai";
-import {currentlyPlayingAtom} from "@/stores/store.ts";
+import {beatOffsetAtom, currentlyPlayingAtom} from "@/stores/store.ts";
 import "./ViewContainer.css"
 
 interface ViewContainerProps {
@@ -9,7 +9,7 @@ interface ViewContainerProps {
 }
 
 export const ViewContainer = ({ children }: ViewContainerProps) => {
-  const ANIMATION_OFFSET = 390; // ms
+  const beatOffset = useAtomValue(beatOffsetAtom)
 
   const isPlaying = useAtomValue(currentlyPlayingAtom);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -23,7 +23,7 @@ export const ViewContainer = ({ children }: ViewContainerProps) => {
       el.classList.remove("beat-flash");
       void el.offsetWidth;
       el.classList.add("beat-flash");
-    }, ANIMATION_OFFSET);
+    }, beatOffset);
   };
 
   usePropertyListener("/live/song/start_listen/beat", "/live/song/get/beat", handleBeat);

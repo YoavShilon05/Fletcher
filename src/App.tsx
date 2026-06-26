@@ -12,6 +12,7 @@ import {currentlyPlayingAtom, currentSectionAtom, selectedSongAtom} from "@/stor
 import {usePropertyListener} from "@/hooks/usePropertyListener.ts";
 import {useAutoStop} from "@/hooks/useAutoStop.ts";
 import {TitleView} from "@/components/Views/TitleView/TitleView.tsx";
+import {ClickView} from "@/components/Views/ClickView/ClickView.tsx";
 
 
 function App() {
@@ -20,7 +21,7 @@ function App() {
   // const [setlist] = useState<Song[]>(initialSetlist);
   const [selectedSong, setSelectedSong] = useAtom(selectedSongAtom);
   const setlist = useSetlist()
-  const [currentSection, setCurrentSection] = useAtom(currentSectionAtom);
+  const setCurrentSection = useSetAtom(currentSectionAtom);
   const setIsPlaying = useSetAtom(currentlyPlayingAtom);
   const [currentView, setCurrentView] = useState<ViewType>('Title');
 
@@ -58,7 +59,7 @@ function App() {
 
   const VIEW_MAP: Record<ViewType, ReactNode> = {
     Title: <TitleView />,
-    Click: <TitleView />,
+    Click: <ClickView />,
     Chords: <TitleView />,
     Chart: <TitleView />,
   } as const

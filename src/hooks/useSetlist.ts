@@ -43,6 +43,10 @@ export const useSetlist = () => {
           name: locator.name,
           timelineLocation: locator.location,
           bpm: 100,
+          timeSignature: {
+            numerator: 4,
+            denominator: 4,
+          },
           structure: [{
             name: SectionNames.INTRO,
             timelineLocation: locator.location

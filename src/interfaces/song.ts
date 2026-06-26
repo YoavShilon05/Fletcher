@@ -6,5 +6,9 @@ export interface Song {
   key?: string;
   structure: SongSection[];
   timelineLocation: number;
+  timeSignature: {
+    numerator: number;
+    denominator: number;
+  }
   end?: number;
 }
