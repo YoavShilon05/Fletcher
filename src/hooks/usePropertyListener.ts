@@ -2,7 +2,7 @@ import {useEffect} from "react";
 import {sendOsc, useOscListener} from "@/hooks/useOsc.ts";
 import {parseOscPayload} from "@/utils/parse-osc-payload.ts";
 
-export const usePropertyListener = <T>(listenAddress: string, receiveAddress: string, callback: (newValue: T) => void) => {
+export const usePropertyListener = <T extends Array<unknown>>(listenAddress: string, receiveAddress: string, callback: (newValue: T) => void) => {
 
     useEffect(() => {
       sendOsc(listenAddress, []);
