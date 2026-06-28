@@ -13,10 +13,10 @@ import {usePropertyListener} from "@/hooks/usePropertyListener.ts";
 import {useAutoStop} from "@/hooks/useAutoStop.ts";
 import {TitleView} from "@/components/Views/TitleView/TitleView.tsx";
 import {ClickView} from "@/components/Views/ClickView/ClickView.tsx";
+import {ChartView} from "@/components/Views/ChartView/ChartView.tsx";
 
 
 function App() {
-
 
   // const [setlist] = useState<Song[]>(initialSetlist);
   const [selectedSong, setSelectedSong] = useAtom(selectedSongAtom);
@@ -61,7 +61,7 @@ function App() {
     Title: <TitleView />,
     Click: <ClickView />,
     Chords: <TitleView />,
-    Chart: <TitleView />,
+    Chart: <ChartView />,
   } as const
 
   const viewComponent = useMemo(() => VIEW_MAP[currentView], [currentView])
