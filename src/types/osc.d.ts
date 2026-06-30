@@ -6,7 +6,7 @@ declare module 'osc' {
 
     interface OscMessage {
         address: string;
-        args: OscArgument[];
+        args: string[];
     }
 
     interface UDPPortOptions {

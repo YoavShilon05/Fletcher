@@ -92,7 +92,6 @@ export function SheetViewer({
       return;
     }
     const result = getMeasureRect(osmd, activeMeasure)
-    console.log("HIGHLIGHT", result)
     setHighlightRect(result);
   };
 

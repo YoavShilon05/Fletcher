@@ -1,7 +1,6 @@
-import {useState} from "react";
 import {Scene} from "@/interfaces/scene.ts";
-import {useAtomValue, useSetAtom} from "jotai";
-import {selectedSongAtom, setlistAtom} from "@/stores/store.ts";
+import {useAtom, useAtomValue, useSetAtom} from "jotai";
+import {scenesAtom, selectedSongAtom, setlistAtom} from "@/stores/store.ts";
 import {usePropertyListener} from "@/hooks/usePropertyListener.ts";
 
 
@@ -9,7 +8,7 @@ export const useSceneSelection = () => {
 
   const setlist = useAtomValue(setlistAtom)
   const setSelectedSong = useSetAtom(selectedSongAtom)
-  const [scenes, setScenes] = useState<Scene[]>([]); //todo: prob move into an atom
+  const [scenes, setScenes] = useAtom(scenesAtom);
 
   const updateScenes = (payload: (number | string)[]) => {
     const payloadScenes: Scene[] = []

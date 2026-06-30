@@ -8,12 +8,13 @@ import {ViewType} from "@/interfaces/view-type.ts";
 import {useSetlist} from "@/hooks/useSetlist.ts";
 import {useSceneSelection} from "@/hooks/useSceneSelection.ts";
 import {useAtom, useSetAtom} from "jotai";
-import {currentlyPlayingAtom, currentSectionAtom, selectedSongAtom} from "@/stores/store.ts";
+import {currentBeatAtom, currentlyPlayingAtom, currentSectionAtom, selectedSongAtom} from "@/stores/store.ts";
 import {usePropertyListener} from "@/hooks/usePropertyListener.ts";
 import {useAutoStop} from "@/hooks/useAutoStop.ts";
 import {TitleView} from "@/components/Views/TitleView/TitleView.tsx";
 import {ClickView} from "@/components/Views/ClickView/ClickView.tsx";
 import {ChartView} from "@/components/Views/ChartView/ChartView.tsx";
+import {useSetupGlobalAtoms} from "@/hooks/useSetupGlobalAtoms.ts";
 
 
 function App() {
@@ -23,13 +24,23 @@ function App() {
   const setlist = useSetlist()
   const setCurrentSection = useSetAtom(currentSectionAtom);
   const setIsPlaying = useSetAtom(currentlyPlayingAtom);
+  const setCurrentBeat = useSetAtom(currentBeatAtom);
   const [currentView, setCurrentView] = useState<ViewType>('Title');
 
-  usePropertyListener("/live/song/start_listen/is_playing", "/live/song/get/is_playing", (isPlaying: boolean[]) => {
-    setIsPlaying(isPlaying[0]);
+  usePropertyListener("/live/song/start_listen/is_playing", "/live/song/get/is_playing", (payload: boolean[]) => {
+    setIsPlaying(payload[0]);
   })
+  usePropertyListener("/live/song/start_listen/beat", "/live/song/get/beat", (payload: number[]) =>
+    setCurrentBeat(payload[0])
+  )
+
+  // usePropertyListener("/live/song/get/file_path", "/live/song/get/file_path", (payload: string[]) => {
+  //   console.log("GOT RESULT", payload)
+  // })
+
   useAutoStop()
   useSceneSelection();
+  useSetupGlobalAtoms()
 
   useEffect(() => {
     if (!setlist || setlist.length === 0) {

@@ -1,6 +1,7 @@
 import {sendOsc} from "@/hooks/useOsc.ts";
 import {useAtom, useAtomValue} from "jotai";
 import {
+  currentBeatAtom,
   currentlyPlayingAtom,
   currentSectionAtom,
   selectedSongAtom,
@@ -8,7 +9,7 @@ import {
   snapSelectionAtom
 } from "@/stores/store.ts";
 import {SongSection} from "@/interfaces/song-section.ts";
-import {usePropertyListener} from "@/hooks/usePropertyListener.ts";
+import {useEffect} from "react";
 
 
 export const useSnapSelection = () => {
@@ -17,18 +18,15 @@ export const useSnapSelection = () => {
   const [currentSection, setCurrentSection] = useAtom(currentSectionAtom)
   const snapSelection = useAtomValue(snapSelectionAtom)
   const isPlaying = useAtomValue(currentlyPlayingAtom)
+  const currentBeat = useAtomValue(currentBeatAtom)
 
-  const snapToTimeline = (payload: number[]) => {
-    if (!snapSelection) return;
-    if (isPlaying) return;
+  const snapToTimeline = () => {
     if (!currentSection || !currentSong || !setlist) return;
 
-    const timelineLocation = payload[0] as number;
-
-    if (currentSection.timelineLocation === timelineLocation) return;
+    if (currentSection.timelineLocation === currentBeat) return;
 
     const currentSectionIndex = currentSong.structure.findIndex(section => section === currentSection)
-    const goForward = timelineLocation > currentSection.timelineLocation
+    const goForward = currentBeat > currentSection.timelineLocation
     let nextSection: SongSection = currentSection;
     if (goForward) {
       if (currentSectionIndex < currentSong.structure.length - 1) {
@@ -43,10 +41,13 @@ export const useSnapSelection = () => {
     }
 
     setCurrentSection(nextSection!);
-    sendOsc(`/live/song/jump_by`, [nextSection.timelineLocation - timelineLocation]); //todo if I can find a way to capture midi messages I can remove this and life will be beautiful.
+    sendOsc(`/live/song/jump_by`, [nextSection.timelineLocation - currentBeat]); //todo if I can find a way to capture midi messages I can remove this and life will be beautiful.
     sendOsc(`/live/song/set/start_time`, [nextSection.timelineLocation]);
   };
 
-  usePropertyListener("/live/song/start_listen/beat", "/live/song/get/beat", snapToTimeline)
+  useEffect(() => {
+    if (!snapSelection || isPlaying) return;
+    snapToTimeline()
+  }, [currentBeat]);
 
 }

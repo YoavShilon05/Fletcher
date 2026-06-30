@@ -1,11 +1,7 @@
 import { useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-
-interface OscMessage {
-    address: string;
-    args: string[];
-}
+import {OscMessage} from "osc";
 
 export function useOscListener(onMessage: (msg: OscMessage) => void) {
     useEffect(() => {

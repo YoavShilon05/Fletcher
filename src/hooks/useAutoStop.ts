@@ -1,19 +1,20 @@
-import {usePropertyListener} from "@/hooks/usePropertyListener.ts";
 import {useAtomValue} from "jotai";
-import {selectedSongAtom} from "@/stores/store.ts";
+import {currentBeatAtom, selectedSongAtom} from "@/stores/store.ts";
 import {sendOsc} from "@/hooks/useOsc.ts";
 import {useNextSong} from "@/hooks/useNextSong.ts";
+import {useEffect} from "react";
 
 export const useAutoStop = () => {
 
   const selectedSong = useAtomValue(selectedSongAtom)
   const nextSong = useNextSong()
 
-  const listenForStopSong = (payload: number[]) => {
-    if (!selectedSong) return;
-    const timelineLocation = payload[0]
+  const currentBeat = useAtomValue(currentBeatAtom)
 
-    if (selectedSong.end && timelineLocation >= selectedSong.end) {
+  const listenForStopSong = () => {
+    if (!selectedSong) return;
+
+    if (selectedSong.end && currentBeat >= selectedSong.end) {
       sendOsc("/live/song/stop_playing", [])
       if (nextSong) {
         sendOsc(`/live/song/set/start_time`, [nextSong.timelineLocation])
@@ -21,5 +22,7 @@ export const useAutoStop = () => {
     }
   }
 
-  usePropertyListener("/live/song/start_listen/beat", "/live/song/get/beat", listenForStopSong)
+  useEffect(() => {
+    listenForStopSong()
+  }, [currentBeat]);
 }
