@@ -1,48 +1,30 @@
 import {useAtomValue} from "jotai";
-import {beatOffsetAtom, currentBeatAtom, currentlyPlayingAtom, selectedSongAtom} from "@/stores/store.ts";
+import {currentBeatAtom, currentlyPlayingAtom, selectedSongAtom} from "@/stores/store.ts";
 import {ViewContainer} from "@/components/Views/ViewContainer.tsx";
 import {SongInfo} from "@/components/Views/SongInfo.tsx";
-import {usePropertyListener} from "@/hooks/usePropertyListener.ts";
-import {useEffect, useRef, useState} from "react";
-import {useGetTimeSignature} from "@/hooks/useGetTimeSignature.ts";
+import {getTimeSignature} from "@/utils/get-time-signature.ts";
+import {calculateMeasure} from "@/utils/calc-current-measure.ts";
 
 export const ClickView = () => {
   const selectedSong = useAtomValue(selectedSongAtom)
   const isPlaying = useAtomValue(currentlyPlayingAtom);
 
-  const beatOffset = useAtomValue(beatOffsetAtom)
-  const activeCircleOffset = 1;
+  // const beatOffset = useAtomValue(beatOffsetAtom)
+  // const activeCircleOffset = 1;
+
+  //todo: comnsider non-4 denominators and non-4 numerators
 
   const currentBeat = useAtomValue(currentBeatAtom);
-  // const [activeBeat, setActiveBeat] = useState<number | null>(null);
-  const activeBeat = isPlaying ? currentBeat % 4 : null //todo: fix (hard af)
-  const currentTimeSignature = useGetTimeSignature(activeBeat ?? undefined, selectedSong);
-  const circleCount = currentTimeSignature.numerator
-  // const timerRef = useRef<number>(null);
+  const timeSignature = getTimeSignature(currentBeat, selectedSong);
+  const activeBeat = isPlaying ? (
+    selectedSong
+      ? calculateMeasure(currentBeat, selectedSong) * timeSignature.numerator % timeSignature.numerator
+      : currentBeat % timeSignature.numerator % timeSignature.numerator
+    ) : null
 
-  // const handleBeat = (payload: number[]) => {
-  //   if (!isPlaying || !selectedSong) return;
-  //
-  //   const beat = payload[0];
-  //   const songStart = selectedSong?.timelineLocation
-  //
-  //   const nextActiveBeat = (beat - songStart + activeCircleOffset) % circleCount;
-  //
-  //   timerRef.current = setTimeout(() => {
-  //     setActiveBeat(nextActiveBeat);
-  //   }, beatOffset);
-  // };
+  console.log("ACTIV EBEAT", activeBeat)
 
-  // useEffect(() => {
-  //   if (!isPlaying) {
-  //     setActiveBeat(null)
-  //     if (timerRef.current) {
-  //       clearTimeout(timerRef.current)
-  //     }
-  //   }
-  // }, [isPlaying]);
-  //
-  // usePropertyListener("/live/song/start_listen/beat", "/live/song/get/beat", handleBeat);
+  const circleCount = timeSignature.numerator
 
   return (
     <ViewContainer>

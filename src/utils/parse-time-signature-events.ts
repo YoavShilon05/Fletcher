@@ -1,11 +1,13 @@
-export interface TimeSignatureEvent {
+import {TimeSignatureChangeEvent} from "@/interfaces/time-signature.ts";
+
+interface TimeSignatureEnumEvent {
   time: number;
   value: number
 }
 
-function decodeTimeSignatureTime(tsTime: number) {
-  return tsTime / 4 + 1;
-}
+// function decodeTimeSignatureTime(tsTime: number) {
+//   return tsTime / 4 + 1;
+// }
 
 function decodeTimeSignatureValue(tsId: number) {
   const denominators = [1, 2, 4, 8, 16];
@@ -20,10 +22,8 @@ function decodeTimeSignatureValue(tsId: number) {
   return { numerator, denominator };
 }
 
-export function parseTimeSignatureEvents (events: TimeSignatureEvent[]): {
-  timeSignature: {numerator: number, denominator: number}, time: number
-}[] {
+export function parseTimeSignatureEvents (events: TimeSignatureEnumEvent[]): TimeSignatureChangeEvent[] {
   return events.map(event => {
-    return {timeSignature: decodeTimeSignatureValue(event.value), time: decodeTimeSignatureTime(event.time)}
+    return {timeSignature: decodeTimeSignatureValue(event.value), time: event.time}
   })
 }

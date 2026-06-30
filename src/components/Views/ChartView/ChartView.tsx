@@ -1,8 +1,9 @@
-import React, {useCallback} from "react";
+import React from "react";
 import {SheetViewer} from "@/components/Views/ChartView/SheetViewer.tsx";
 import {xml} from "@/components/Views/ChartView/test.ts";
 import {currentBeatAtom, selectedSongAtom} from "@/stores/store.ts";
 import {useAtomValue} from "jotai";
+import {calculateMeasure} from "@/utils/calc-current-measure.ts";
 
 interface CleanChartViewProps {
   scale?: number;
@@ -13,17 +14,25 @@ export const ChartView: React.FC<CleanChartViewProps> = ({ scale = 1.7 }) => {
   const beat = useAtomValue(currentBeatAtom)
   const song = useAtomValue(selectedSongAtom)
 
-  const calcCurrentMeasure = useCallback(() => {
-    if (!song) return undefined;
-    const relativePosition = beat - song.timelineLocation;
-    return Math.floor(relativePosition / 4)
-  }, [song, beat])
+  // const calcCurrentMeasure = useCallback(() => {
+  //   if (!song) return undefined;
+  //   const relativePosition = beat - song.timelineLocation;
+  //   return Math.floor(relativePosition / 4)
+  // }, [song, beat])
+
+  // useEffect(() => {
+  //   if (!song) return;
+  //   const result = calculateMeasure(beat, song!)
+  //   console.log(result)
+  // }, [song, beat]);
+
+  if (!song) return null;
 
   return (
     <div className="w-full h-full bg-white">
       <SheetViewer
         content={xml}
-        activeMeasure={calcCurrentMeasure()}
+        activeMeasure={Math.floor(calculateMeasure(beat, song))}
         zoom={scale}
         extraMarkers={[
           { measure: 1, label: 'Verse' },   // already in XML, just shown as example
