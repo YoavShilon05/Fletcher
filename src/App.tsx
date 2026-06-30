@@ -14,9 +14,26 @@ import {useAutoStop} from "@/hooks/useAutoStop.ts";
 import {TitleView} from "@/components/Views/TitleView/TitleView.tsx";
 import {ClickView} from "@/components/Views/ClickView/ClickView.tsx";
 import {ChartView} from "@/components/Views/ChartView/ChartView.tsx";
+import {loadAls} from "@/utils/parse-als.ts";
+import {parseTimeSignatureEvents} from "@/utils/parse-time-signature-events.ts";
 
 
 function App() {
+
+  useEffect(() => {
+    const foo = async () => {
+      const xml =
+        await loadAls("C:\\Users\\pc\\Desktop\\FletcherTest Project\\FletcherTest.als")
+      //Ableton.LiveSet.MainTrack.AutomationEnvelopes.Envelopes.AutomationEnvelope[0].Automation.Events.EnumEvent
+      const timeSignatureEvents = xml.Ableton.LiveSet.MainTrack.AutomationEnvelopes.Envelopes.AutomationEnvelope[0].Automation.Events.EnumEvent
+      console.log(xml)
+      const result = parseTimeSignatureEvents(timeSignatureEvents.map
+        ((event: any) => ({value: event["@_Value"], time: event["@_Time"]}))
+      )
+      console.log(result)
+    }
+    foo()
+  }, []);
 
   // const [setlist] = useState<Song[]>(initialSetlist);
   const [selectedSong, setSelectedSong] = useAtom(selectedSongAtom);
