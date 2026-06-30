@@ -81,6 +81,7 @@ fn start_osc_listener(app: AppHandle) {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_fs::init())
         .setup(|app| {
             start_osc_listener(app.handle().clone());
             Ok(())
