@@ -1,15 +1,15 @@
 //todo:::
 // chord view
 // auto scroll on chart view / chord view
-// shoutouts
-// auto file loading from project folder
-// loop sections
+// shoutouts actually good / w-misc names
+// locate fletcher track dynamically.
 // add python to git repo
 //
 // optional
 // automatically listen to als file changes (instead of having to manually F5 the project)
 // add midi keyboard shortcuts
 // redesign ui
+// loop follows when you move sections
 
 
 import React from "react";

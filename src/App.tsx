@@ -22,6 +22,7 @@ import {ChartView} from "@/components/Views/ChartView/ChartView.tsx";
 import {useSetupGlobalAtoms} from "@/hooks/useSetupGlobalAtoms.ts";
 import {useLoopSnapper} from "@/hooks/useLoopSnapper.ts";
 import {prepareClips} from "@/utils/prepare-clips.ts";
+import {useCueCalls} from "@/hooks/useCueCalls.ts";
 
 function App() {
 
@@ -46,6 +47,7 @@ function App() {
   useLoopSnapper()
   useAutoStop()
   useSceneSelection();
+  useCueCalls()
   useSetupGlobalAtoms()
 
   useEffect(() => {

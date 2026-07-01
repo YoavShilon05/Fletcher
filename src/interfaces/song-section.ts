@@ -12,6 +12,11 @@ export enum SectionNames {
   OUTRO = "OUTRO"
 }
 
+export enum MiscNames {
+  BREAK = "BREAK",
+  IMPROV = "IMPROV"
+}
+
 export interface SongSection {
   name: SectionNames;
   timelineLocation: number;
