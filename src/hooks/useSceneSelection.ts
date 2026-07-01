@@ -42,28 +42,7 @@ export const useSceneSelection = () => {
     }
   }
 
-  // useEffect(() => {
-  //   sendOsc("/live/view/start_listen/selected_scene", []);
-  //   sendOsc("/live/song/start_listen/scenes", [])
-  // }, []);
-
-  // const handleMessage = (msg: { address: string; args: string[] }) => {
-  //   const payload = parseOscPayload<(number | string)[]>(msg.args)
-  //
-  //   switch (msg.address) {
-  //     case "/live/view/get/selected_scene":
-  //       selectSong(payload)
-  //       break;
-  //
-  //     case "/live/song/get/scenes":
-  //       updateScenes(payload)
-  //       break;
-  //   }
-  // };
-
-  // useOscListener(handleMessage);
   usePropertyListener("/live/view/start_listen/selected_scene", "/live/view/get/selected_scene", selectSong)
   usePropertyListener("/live/song/start_listen/scenes", "/live/song/get/scenes", updateScenes)
-
 
 }

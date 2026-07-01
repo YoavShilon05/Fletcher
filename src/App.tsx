@@ -21,8 +21,13 @@ import {ClickView} from "@/components/Views/ClickView/ClickView.tsx";
 import {ChartView} from "@/components/Views/ChartView/ChartView.tsx";
 import {useSetupGlobalAtoms} from "@/hooks/useSetupGlobalAtoms.ts";
 import {useLoopSnapper} from "@/hooks/useLoopSnapper.ts";
+import {prepareClips} from "@/utils/prepare-clips.ts";
 
 function App() {
+
+  useEffect(() => {
+    prepareClips(0)
+  }, []);
 
   // const [setlist] = useState<Song[]>(initialSetlist);
   const [selectedSong, setSelectedSong] = useAtom(selectedSongAtom);
