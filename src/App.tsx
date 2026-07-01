@@ -20,6 +20,7 @@ import {TitleView} from "@/components/Views/TitleView/TitleView.tsx";
 import {ClickView} from "@/components/Views/ClickView/ClickView.tsx";
 import {ChartView} from "@/components/Views/ChartView/ChartView.tsx";
 import {useSetupGlobalAtoms} from "@/hooks/useSetupGlobalAtoms.ts";
+import {useLoopSnapper} from "@/hooks/useLoopSnapper.ts";
 
 function App() {
 
@@ -37,7 +38,7 @@ function App() {
   usePropertyListener("/live/song/start_listen/beat", "/live/song/get/beat", (payload: number[]) =>
     setCurrentBeat(payload[0])
   )
-
+  useLoopSnapper()
   useAutoStop()
   useSceneSelection();
   useSetupGlobalAtoms()
