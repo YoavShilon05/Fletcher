@@ -1,0 +1,1 @@
+export const CHARTS_FOLDER_NAME = 'charts';

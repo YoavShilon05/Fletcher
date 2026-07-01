@@ -3,14 +3,14 @@ import {OscMessage} from "osc";
 import {useEffect} from "react";
 import {parseOscPayload} from "@/utils/parse-osc-payload.ts";
 import {useSetAtom} from "jotai";
-import {globalTimeSignatureAtom, timeSignatureChangesAtom} from "@/stores/store.ts";
+import {filePathAtom, globalTimeSignatureAtom, timeSignatureChangesAtom} from "@/stores/store.ts";
 import {loadAls} from "@/utils/parse-als.ts";
 import {parseTimeSignatureEvents} from "@/utils/parse-time-signature-events.ts";
 
 export const useSetupGlobalAtoms = () => {
 
   const setGlobalTimeSignature = useSetAtom(globalTimeSignatureAtom)
-  // const setFilePath = useSetAtom(filePathAtom)
+  const setFilePath = useSetAtom(filePathAtom)
   const setTimeSignatureChanges = useSetAtom(timeSignatureChangesAtom)
 
   const handleSetupMessages = async (msg: OscMessage) => {
@@ -25,6 +25,7 @@ export const useSetupGlobalAtoms = () => {
         break;
       case "/live/song/get/file_path":
         const filePath = payload[0] as string
+        setFilePath(filePath)
         const xml = await loadAls(filePath)
         //Ableton.LiveSet.MainTrack.AutomationEnvelopes.Envelopes.AutomationEnvelope[0].Automation.Events.EnumEvent
         const timeSignatureEvents = xml.Ableton.LiveSet.MainTrack.AutomationEnvelopes.Envelopes.AutomationEnvelope[0].Automation.Events.EnumEvent
