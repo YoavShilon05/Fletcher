@@ -1,6 +1,5 @@
 import {ReactNode, useEffect, useMemo, useState} from "react";
 import "./App.css";
-import {sendOsc} from "./hooks/useOsc.ts";
 import {SongSelector} from "@/components/SongSelector/SongSelector.tsx";
 import {SongStructure} from "@/components/SongStructure/SongStructure.tsx";
 import {ViewSelector} from "@/components/ViewSelector/ViewSelector.tsx";
@@ -35,7 +34,6 @@ function App() {
   // const [setlist] = useState<Song[]>(initialSetlist);
   const [selectedSong, setSelectedSong] = useAtom(selectedSongAtom);
   const setlist = useSetlist()
-  const setCurrentSection = useSetAtom(currentSectionAtom);
   const setIsPlaying = useSetAtom(currentlyPlayingAtom);
   const setCurrentBeat = useSetAtom(currentBeatAtom);
   const [currentView, setCurrentView] = useState<ViewType>('Title');
@@ -63,14 +61,6 @@ function App() {
     }
 
   }, [setlist, selectedSong]);
-
-  useEffect(() => {
-    setCurrentSection((selectedSong && selectedSong.structure.length > 0) ? selectedSong.structure[0] : undefined);
-
-    if (!selectedSong) return;
-
-    sendOsc(`/live/song/set/start_time`, [selectedSong.timelineLocation])
-  }, [selectedSong]);
 
   useEffect(() => {
     if (!selectedSong || !setlist) return;

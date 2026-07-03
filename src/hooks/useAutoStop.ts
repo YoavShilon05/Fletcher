@@ -1,5 +1,5 @@
 import {useAtomValue} from "jotai";
-import {currentBeatAtom, selectedSongAtom} from "@/stores/store.ts";
+import {currentBeatAtom, currentlyPlayingAtom, selectedSongAtom} from "@/stores/store.ts";
 import {sendOsc} from "@/hooks/useOsc.ts";
 import {useNextSong} from "@/hooks/useNextSong.ts";
 import {useEffect} from "react";
@@ -8,6 +8,7 @@ export const useAutoStop = () => {
 
   const selectedSong = useAtomValue(selectedSongAtom)
   const nextSong = useNextSong()
+  const currentlyPlaying = useAtomValue(currentlyPlayingAtom)
 
   const currentBeat = useAtomValue(currentBeatAtom)
 
@@ -23,6 +24,7 @@ export const useAutoStop = () => {
   }
 
   useEffect(() => {
+    if (!currentlyPlaying) return;
     listenForStopSong()
   }, [currentBeat]);
 }

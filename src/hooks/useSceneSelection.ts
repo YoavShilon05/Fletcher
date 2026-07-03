@@ -2,6 +2,7 @@ import {Scene} from "@/interfaces/scene.ts";
 import {useAtom, useAtomValue, useSetAtom} from "jotai";
 import {scenesAtom, selectedSongAtom, setlistAtom} from "@/stores/store.ts";
 import {usePropertyListener} from "@/hooks/usePropertyListener.ts";
+import {sendOsc} from "@/hooks/useOsc.ts";
 
 
 export const useSceneSelection = () => {
@@ -39,6 +40,7 @@ export const useSceneSelection = () => {
     const song = setlist?.find(song => song.name === songName)
     if (song) {
       setSelectedSong(song)
+      sendOsc(`/live/song/set/start_time`, [song.timelineLocation])
     }
   }
 

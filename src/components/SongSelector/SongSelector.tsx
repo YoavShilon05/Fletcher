@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { SongCard } from './SongCard';
 import {useAtom, useAtomValue} from "jotai";
 import {selectedSongAtom, setlistAtom} from "@/stores/store.ts";
+import {sendOsc} from "@/hooks/useOsc.ts";
 
 
 export const SongSelector = () => {
@@ -16,7 +17,11 @@ export const SongSelector = () => {
 
   const handleSelectIndex = (index: number) => {
     if (!setlist) return;
-    if (index >= 0 && index < setlist.length) setSelectedSong(setlist[index]);
+    if (index >= 0 && index < setlist.length) {
+      const selectedSong = setlist[index]
+      setSelectedSong(selectedSong)
+      sendOsc(`/live/song/set/start_time`, [selectedSong.timelineLocation])
+    };
   };
 
   useEffect(() => {
