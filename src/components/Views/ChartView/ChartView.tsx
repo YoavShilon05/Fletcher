@@ -3,6 +3,7 @@ import {useAtomValue} from "jotai";
 import {calculateMeasure} from "@/utils/calc-current-measure.ts";
 import {useChart} from "@/hooks/useChart.ts";
 import {SheetViewer} from "@/components/Views/ChartView/SheetViewer.tsx";
+import {useMemo} from "react";
 
 interface CleanChartViewProps {
   scale?: number;
@@ -14,6 +15,13 @@ export const ChartView = ({ scale = 1.7 }: CleanChartViewProps) => {
   const song = useAtomValue(selectedSongAtom)
   const content = useChart(song)
 
+  const extraMarkers = useMemo(() => {
+    if (!song) return [];
+    return song.structure.map((section) => ({
+      measure: calculateMeasure(section.timelineLocation, song) + 1,
+      label: section.name,
+    }));
+  }, [song]);
 
   if (!song) return null;
 
@@ -28,12 +36,8 @@ export const ChartView = ({ scale = 1.7 }: CleanChartViewProps) => {
       <SheetViewer
         content={content}
         activeMeasure={Math.floor(calculateMeasure(beat, song))}
-        zoom={3}
-        extraMarkers={[
-          { measure: 1, label: 'Verse' },   // already in XML, just shown as example
-          { measure: 9, label: 'Chorus' },
-          { measure: 13, label: 'Bridge' }, // injected from outside
-        ]}
+        zoom={scale}
+        extraMarkers={extraMarkers}
       />
     </div>
   );

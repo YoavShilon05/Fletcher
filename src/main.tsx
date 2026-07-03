@@ -1,8 +1,6 @@
 //todo:::
-// chord view
-// auto scroll on chart view / chord view
-// shoutouts actually good
-// locate fletcher track dynamically.
+// count-in
+// shoutouts actually good.
 // add python to git repo
 //
 // optional
@@ -10,6 +8,7 @@
 // add midi keyboard shortcuts
 // redesign ui
 // loop follows when you move sections
+// set project time signatures based on scene
 
 
 import React from "react";

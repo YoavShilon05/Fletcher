@@ -22,7 +22,6 @@ export const SongSelector = () => {
       const selectedSong = setlist[index]
       setSelectedSong(selectedSong)
       sendOsc(`/live/song/set/start_time`, [selectedSong.timelineLocation])
-      setCurrentSection(selectedSong.structure.at(0))
     };
   };
 

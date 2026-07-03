@@ -9,7 +9,7 @@ import {useSceneSelection} from "@/hooks/useSceneSelection.ts";
 import {useAtom, useAtomValue, useSetAtom} from "jotai";
 import {
   currentBeatAtom,
-  currentlyPlayingAtom,
+  currentlyPlayingAtom, currentSectionAtom,
   fletcherTrackIndexAtom,
   selectedSongAtom
 } from "@/stores/store.ts";
@@ -30,6 +30,7 @@ function App() {
 
   const trackIndex = useAtomValue(fletcherTrackIndexAtom)
   useEffect(() => {
+    if (trackIndex)
     prepareClips(trackIndex);
   }, [trackIndex]);
 
@@ -38,7 +39,13 @@ function App() {
   const setlist = useSetlist()
   const setIsPlaying = useSetAtom(currentlyPlayingAtom);
   const setCurrentBeat = useSetAtom(currentBeatAtom);
+  const setCurrentSection = useSetAtom(currentSectionAtom);
   const [currentView, setCurrentView] = useState<ViewType>('Title');
+
+  useEffect(() => {
+    if (!selectedSong) return;
+    setCurrentSection(selectedSong.structure.at(0))
+  }, [selectedSong]);
 
   usePropertyListener("/live/song/start_listen/is_playing", "/live/song/get/is_playing", (payload: boolean[]) => {
     setIsPlaying(payload[0]);
