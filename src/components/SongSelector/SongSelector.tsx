@@ -2,8 +2,8 @@ import {useRef, useEffect} from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SongCard } from './SongCard';
-import {useAtom, useAtomValue} from "jotai";
-import {selectedSongAtom, setlistAtom} from "@/stores/store.ts";
+import {useAtom, useAtomValue, useSetAtom} from "jotai";
+import {currentSectionAtom, selectedSongAtom, setlistAtom} from "@/stores/store.ts";
 import {sendOsc} from "@/hooks/useOsc.ts";
 
 
@@ -13,6 +13,7 @@ export const SongSelector = () => {
 
   const [selectedSong, setSelectedSong] = useAtom(selectedSongAtom);
   const setlist = useAtomValue(setlistAtom)
+  const setCurrentSection = useSetAtom(currentSectionAtom)
   const currentIndex = setlist?.findIndex((s) => s.name === selectedSong?.name) || 0;
 
   const handleSelectIndex = (index: number) => {
@@ -21,6 +22,7 @@ export const SongSelector = () => {
       const selectedSong = setlist[index]
       setSelectedSong(selectedSong)
       sendOsc(`/live/song/set/start_time`, [selectedSong.timelineLocation])
+      setCurrentSection(selectedSong.structure.at(0))
     };
   };
 

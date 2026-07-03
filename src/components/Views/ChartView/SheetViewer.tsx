@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import {OpenSheetMusicDisplay, unitInPixels} from 'opensheetmusicdisplay';
+import { OpenSheetMusicDisplay, unitInPixels } from 'opensheetmusicdisplay';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface SectionMarker {
   /** 1-indexed measure number */
@@ -20,6 +21,11 @@ interface MeasureRect {
   y: number;
   w: number;
   h: number;
+}
+
+interface MarkerRect {
+  rect: MeasureRect;
+  label: string;
 }
 
 function getMeasureRect(
@@ -73,6 +79,12 @@ function getMeasureRect(
   return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
 }
 
+// Section-marker label size, in constant screen px (deliberately not
+// zoom-scaled — a fixed-size annotation reads better at any zoom level
+// than one that grows with the staff).
+const MARKER_HEIGHT = 20;
+const MARKER_GAP = 4;
+
 export function SheetViewer({
                               content,
                               activeMeasure,
@@ -82,17 +94,30 @@ export function SheetViewer({
   const containerRef = useRef<HTMLDivElement>(null);
   // Store the OSMD instance in a ref, never in state — state triggers re-renders
   const osmdRef = useRef<OpenSheetMusicDisplay | null>(null);
-  const [highlightRect, setHighlightRect] = useState<MeasureRect | null>(null);
+  // Ref on the highlight box itself, so we can ask the browser to scroll it
+  // into view without re-implementing viewport math by hand.
+  const highlightRef = useRef<HTMLDivElement>(null);
 
-  /** Call after every render to refresh the highlight position. */
-  const updateHighlight = () => {
+  const [highlightRect, setHighlightRect] = useState<MeasureRect | null>(null);
+  const [markerRects, setMarkerRects] = useState<MarkerRect[]>([]);
+
+  /** Call after every render (content/zoom load, or activeMeasure change) to refresh overlay positions. */
+  const updateOverlays = () => {
     const osmd = osmdRef.current;
-    if (!osmd || activeMeasure == null) {
+    if (!osmd) {
       setHighlightRect(null);
+      setMarkerRects([]);
       return;
     }
-    const result = getMeasureRect(osmd, activeMeasure)
-    setHighlightRect(result);
+
+    setHighlightRect(activeMeasure != null ? getMeasureRect(osmd, activeMeasure) : null);
+
+    const markers: MarkerRect[] = [];
+    for (const marker of extraMarkers) {
+      const rect = getMeasureRect(osmd, marker.measure - 1); // markers are 1-indexed
+      if (rect) markers.push({ rect, label: marker.label });
+    }
+    setMarkerRects(markers);
   };
 
   // ── 1. Create OSMD instance exactly once ─────────────────────────────────
@@ -105,8 +130,10 @@ export function SheetViewer({
       drawTitle: false,
       drawComposer: false,
       drawingParameters: 'compacttight',
-      // autoResize causes a second render on mount — disable it.
-      autoResize: true,
+      // We re-layout explicitly via our own render() calls below. Leaving
+      // this on lets OSMD re-render itself behind our back on container
+      // resize, which would silently desync our overlay positions.
+      autoResize: false,
     });
 
     return () => {
@@ -127,11 +154,12 @@ export function SheetViewer({
       .then(() => {
         osmd.zoom = zoom;
         osmd.render();
+        updateOverlays();
       })
       .catch((err) => {
         console.error('OSMD load error:', err);
       });
-  }, [content]);
+  }, [content]); // eslint-disable-line
 
   // ── 3. Re-render on zoom change (after initial load) ─────────────────────
   useEffect(() => {
@@ -139,34 +167,63 @@ export function SheetViewer({
     if (!osmd) return;
     osmd.zoom = zoom;
     osmd.render();
+    updateOverlays();
   }, [zoom]); // eslint-disable-line
 
   // ── 4. Reposition highlight when activeMeasure changes (no re-render) ─────
   useEffect(() => {
-    updateHighlight();
+    updateOverlays();
   }, [activeMeasure]); // eslint-disable-line
 
+  // ── 5. Auto-scroll the active measure into view — only when it's actually
+  //       outside the visible area, thanks to scrollIntoView's block:'nearest'.
+  useEffect(() => {
+    if (highlightRect && highlightRef.current) {
+      highlightRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'nearest',
+      });
+    }
+  }, [highlightRect]);
+
   return (
-    // Explicit block container — flex parents will try to shrink this.
-    <div className="relative w-full block">
-      {/* OSMD mounts here. Avoid any padding/margin that would shift the
-          SVG relative to this div — it breaks the coordinate math. */}
-      <div ref={containerRef} className="w-full"/>
+    <ScrollArea className="h-full w-full">
+      {/* Explicit block container — flex parents will try to shrink this. */}
+      <div className="relative w-full block">
+        {/* OSMD mounts here. Avoid any padding/margin that would shift the
+            SVG relative to this div — it breaks the coordinate math. */}
+        <div ref={containerRef} className="w-full"/>
 
-      {highlightRect && (
-        <div
-          className="pointer-events-none absolute rounded-sm"
-          style={{
-            left: highlightRect.x,
-            top: highlightRect.y,
-            width: highlightRect.w,
-            height: highlightRect.h,
-            backgroundColor: 'rgba(250, 204, 21, 0.25)', // yellow-400/25
-            outline: '2px solid rgba(250, 204, 21, 0.7)',
-          }}
-        />
-      )}
+        {highlightRect && (
+          <div
+            ref={highlightRef}
+            className="pointer-events-none absolute rounded-sm transition-all duration-200 ease-out"
+            style={{
+              left: highlightRect.x,
+              top: highlightRect.y,
+              width: highlightRect.w,
+              height: highlightRect.h,
+              backgroundColor: 'rgba(250, 204, 21, 0.25)', // yellow-400/25
+              outline: '2px solid rgba(250, 204, 21, 0.7)',
+              boxShadow: '0 0 14px rgba(250, 204, 21, 0.35)',
+            }}
+          />
+        )}
 
-    </div>
+        {markerRects.map(({ rect, label }, i) => (
+          <span
+            key={i}
+            className="pointer-events-none absolute inline-flex items-center whitespace-nowrap rounded-sm border border-neutral-400 bg-white px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-neutral-600 transition-all duration-200 ease-out"
+            style={{
+              left: rect.x,
+              top: rect.y - MARKER_HEIGHT - MARKER_GAP,
+            }}
+          >
+            {label}
+          </span>
+        ))}
+      </div>
+    </ScrollArea>
   );
 }

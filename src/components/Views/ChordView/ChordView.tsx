@@ -23,7 +23,7 @@ export const ChordView = () => {
       <ChordViewer
         content={content}
         activeMeasure={Math.floor(calculateMeasure(beat, song))}
-        zoom={2}
+        zoom={2.5}
         extraMarkers={[
           { measure: 1, label: 'Verse' },   // already in XML, just shown as example
           { measure: 9, label: 'Chorus' },

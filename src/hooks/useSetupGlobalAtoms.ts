@@ -3,7 +3,7 @@ import {OscMessage} from "osc";
 import {useEffect} from "react";
 import {parseOscPayload} from "@/utils/parse-osc-payload.ts";
 import {useSetAtom} from "jotai";
-import {filePathAtom, globalTimeSignatureAtom, timeSignatureChangesAtom} from "@/stores/store.ts";
+import {filePathAtom, globalTempoAtom, globalTimeSignatureAtom, timeSignatureChangesAtom} from "@/stores/store.ts";
 import {loadAls} from "@/utils/parse-als.ts";
 import {parseTimeSignatureEvents} from "@/utils/parse-time-signature-events.ts";
 
@@ -12,11 +12,16 @@ export const useSetupGlobalAtoms = () => {
   const setGlobalTimeSignature = useSetAtom(globalTimeSignatureAtom)
   const setFilePath = useSetAtom(filePathAtom)
   const setTimeSignatureChanges = useSetAtom(timeSignatureChangesAtom)
+  const setGlobalTempo = useSetAtom(globalTempoAtom)
 
   const handleSetupMessages = async (msg: OscMessage) => {
 
     const payload = parseOscPayload<(string | number)[]>(msg.args)
     switch (msg.address) {
+      case "/live/song/get/tempo":
+        setGlobalTempo(payload[0] as number)
+        break;
+
       case "/live/song/get/signature_numerator":
         setGlobalTimeSignature(prev => ({...prev, numerator: payload[0] as number}))
         break;
@@ -43,5 +48,6 @@ export const useSetupGlobalAtoms = () => {
     sendOsc("/live/song/get/signature_numerator", [])
     sendOsc("/live/song/get/signature_denominator", [])
     sendOsc("/live/song/get/file_path", [])
+    sendOsc("/live/song/get/tempo", [])
   }, []);
 }

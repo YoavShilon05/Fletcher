@@ -4,7 +4,7 @@ export const STOP_SONG = "STOP" as const;
 export enum SectionNames {
   INTRO = "INTRO",
   VERSE = "VERSE",
-  PRE_CHORUS = "PRE_CHORUS",
+  PRE_CHORUS = "PRE_CHORUS", //todo:
   CHORUS = "CHORUS",
   BRIDGE = "BRIDGE",
   SOLO = "SOLO",

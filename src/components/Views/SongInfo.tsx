@@ -12,7 +12,7 @@ export const SongInfo = () => {
     <div className="grid grid-cols-3 gap-32 items-end mb-10 mx-32">
       <div className="flex flex-col items-center justify-center">
         <div className="flex items-end mb-5">
-          <span className="text-8xl mx-3">{selectedSong?.bpm}</span>
+          <span className="text-8xl mx-3">{selectedSong?.tempo}</span>
           <span className="mb-3">bpm</span>
         </div>
         <Separator />

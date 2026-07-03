@@ -5,7 +5,7 @@ import {useSnapSelection} from "@/hooks/useSnapSelection.ts";
 import {Toggle} from "@/components/ui/toggle.tsx";
 import {SongSection} from "@/interfaces/song-section.ts";
 import {sendOsc} from "@/hooks/useOsc.ts";
-import {useSyncPlayback} from "@/hooks/useSyncPlayback.ts";
+import {useSyncToPlayback} from "@/hooks/useSyncToPlayback.ts";
 
 export const SongStructure = () => {
 
@@ -15,7 +15,7 @@ export const SongStructure = () => {
   const structure = selectedSong?.structure || []
 
   useSnapSelection()
-  useSyncPlayback()
+  useSyncToPlayback()
 
   const onSectionSelect = (section: SongSection): void => {
     setCurrentSection(section)

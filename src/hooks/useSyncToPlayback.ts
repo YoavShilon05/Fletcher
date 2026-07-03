@@ -2,7 +2,7 @@ import {useAtom, useAtomValue} from "jotai";
 import {currentBeatAtom, currentSectionAtom, selectedSongAtom, setlistAtom} from "@/stores/store.ts";
 import {useEffect} from "react";
 
-export const useSyncPlayback = () => {
+export const useSyncToPlayback = () => {
 
   const [selectedSong, setSelectedSong] = useAtom(selectedSongAtom)
   const [currentSection, setCurrentSection] = useAtom(currentSectionAtom);
@@ -14,16 +14,20 @@ export const useSyncPlayback = () => {
   const trackPlayback = () => {
     if (!setlist) return;
 
-    const currentSong = setlist.findLast(song => song.timelineLocation < currentBeat)
+    const currentSong = setlist.findLast(song => song.timelineLocation <= currentBeat)
     if ((currentSong !== selectedSong)) {
       setSelectedSong(currentSong);
     }
 
-    const latestSection = (currentSong ?? selectedSong)?.structure.findLast(section => currentBeat >= section.timelineLocation)
+    if (!currentSong) return;
+
+    const latestSection = (currentSong.end && currentBeat > currentSong.end) ?
+      undefined :
+      (currentSong ?? selectedSong)?.structure.findLast(section => currentBeat >= section.timelineLocation);
+
     if (latestSection !== currentSection) {
       setCurrentSection(latestSection)
     }
-
 
   }
 

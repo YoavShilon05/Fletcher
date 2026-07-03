@@ -7,3 +7,5 @@ export const CALL_SECTION_PAD = 7
 export const CALL_CUE_COUNT = 4
 
 export const FLETCHER_TRACK_NAME = "Fletcher"
+
+export const AUTO_STOP_MARGIN = 1

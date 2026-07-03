@@ -24,6 +24,7 @@ import {prepareClips} from "@/utils/prepare-clips.ts";
 import {useCueCalls} from "@/hooks/useCueCalls.ts";
 import {useFletcherTrack} from "@/hooks/useFletcherTrack.ts";
 import {ChordView} from "@/components/Views/ChordView/ChordView.tsx";
+import {useSyncTempo} from "@/hooks/useSyncTempo.ts";
 
 function App() {
 
@@ -51,6 +52,7 @@ function App() {
   useSceneSelection();
   useCueCalls()
   useSetupGlobalAtoms()
+  useSyncTempo()
 
   useEffect(() => {
     if (!setlist || setlist.length === 0) {

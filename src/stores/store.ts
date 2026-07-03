@@ -17,3 +17,4 @@ export const globalTimeSignatureAtom = atom<TimeSignature>({numerator: 4, denomi
 export const filePathAtom = atom<string>()
 export const timeSignatureChangesAtom = atom<TimeSignatureChangeEvent[]>([])
 export const fletcherTrackIndexAtom = atom<number>(0)
+export const globalTempoAtom = atom<number>(0);

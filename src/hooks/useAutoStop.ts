@@ -3,6 +3,7 @@ import {currentBeatAtom, currentlyPlayingAtom, selectedSongAtom} from "@/stores/
 import {sendOsc} from "@/hooks/useOsc.ts";
 import {useNextSong} from "@/hooks/useNextSong.ts";
 import {useEffect} from "react";
+import {AUTO_STOP_MARGIN} from "@/constants.ts";
 
 export const useAutoStop = () => {
 
@@ -14,13 +15,16 @@ export const useAutoStop = () => {
 
   const listenForStopSong = () => {
     if (!selectedSong) return;
+    if (!selectedSong.end) return;
 
-    if (selectedSong.end && currentBeat >= selectedSong.end) {
-      sendOsc("/live/song/stop_playing", [])
-      if (nextSong) {
-        sendOsc(`/live/song/set/start_time`, [nextSong.timelineLocation])
-      }
+    const distance = currentBeat - selectedSong.end;
+    if (distance < 0 || distance > AUTO_STOP_MARGIN) return;
+
+    sendOsc("/live/song/stop_playing", [])
+    if (nextSong) {
+      sendOsc(`/live/song/set/start_time`, [nextSong.timelineLocation])
     }
+
   }
 
   useEffect(() => {

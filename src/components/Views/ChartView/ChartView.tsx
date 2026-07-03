@@ -28,7 +28,7 @@ export const ChartView = ({ scale = 1.7 }: CleanChartViewProps) => {
       <SheetViewer
         content={content}
         activeMeasure={Math.floor(calculateMeasure(beat, song))}
-        zoom={scale}
+        zoom={3}
         extraMarkers={[
           { measure: 1, label: 'Verse' },   // already in XML, just shown as example
           { measure: 9, label: 'Chorus' },
