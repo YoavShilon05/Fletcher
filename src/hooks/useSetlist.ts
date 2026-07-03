@@ -1,5 +1,5 @@
 import {Song} from "@/interfaces/song.ts";
-import {SectionNames, STOP_SONG} from "@/interfaces/song-section.ts";
+import {ExtraCueNames, SectionNames, STOP_SONG} from "@/interfaces/song-section.ts";
 import {useAtom} from "jotai";
 import {setlistAtom} from "@/stores/store.ts";
 import {usePropertyListener} from "@/hooks/usePropertyListener.ts";
@@ -22,7 +22,7 @@ export const useSetlist = () => {
     for (const locator of locators.sort((a, b) => a.location - b.location)) {
       const lastSong = songs.at(-1)
 
-      if (locator.name === STOP_SONG) {        if (!lastSong) return;
+      if (locator.name === STOP_SONG) {
         if (!lastSong) return;
 
         lastSong.end = locator.location;
@@ -37,6 +37,15 @@ export const useSetlist = () => {
           timelineLocation: locator.location
         })
       }
+      else if (Object.values(ExtraCueNames).includes(locator.name as ExtraCueNames)) {
+        // locator marks a cue call
+        if (!lastSong) return;
+
+        lastSong.extraCalls.push({
+          name: locator.name as ExtraCueNames,
+          timelineLocation: locator.location
+        })
+      }
 
       else {
         songs.push({
@@ -47,6 +56,7 @@ export const useSetlist = () => {
             name: SectionNames.INTRO,
             timelineLocation: locator.location
           }],
+          extraCalls: [],
           key: "Am"
         })
       }

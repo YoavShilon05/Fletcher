@@ -7,11 +7,11 @@ import {ViewSelector} from "@/components/ViewSelector/ViewSelector.tsx";
 import {ViewType} from "@/interfaces/view-type.ts";
 import {useSetlist} from "@/hooks/useSetlist.ts";
 import {useSceneSelection} from "@/hooks/useSceneSelection.ts";
-import {useAtom, useSetAtom} from "jotai";
+import {useAtom, useAtomValue, useSetAtom} from "jotai";
 import {
   currentBeatAtom,
   currentlyPlayingAtom,
-  currentSectionAtom,
+  currentSectionAtom, fletcherTrackIndexAtom,
   selectedSongAtom
 } from "@/stores/store.ts";
 import {usePropertyListener} from "@/hooks/usePropertyListener.ts";
@@ -23,12 +23,14 @@ import {useSetupGlobalAtoms} from "@/hooks/useSetupGlobalAtoms.ts";
 import {useLoopSnapper} from "@/hooks/useLoopSnapper.ts";
 import {prepareClips} from "@/utils/prepare-clips.ts";
 import {useCueCalls} from "@/hooks/useCueCalls.ts";
+import {useFletcherTrack} from "@/hooks/useFletcherTrack.ts";
 
 function App() {
 
+  const trackIndex = useAtomValue(fletcherTrackIndexAtom)
   useEffect(() => {
-    prepareClips(0)
-  }, []);
+    prepareClips(trackIndex);
+  }, [trackIndex]);
 
   // const [setlist] = useState<Song[]>(initialSetlist);
   const [selectedSong, setSelectedSong] = useAtom(selectedSongAtom);
@@ -46,6 +48,7 @@ function App() {
   )
   useLoopSnapper()
   useAutoStop()
+  useFletcherTrack()
   useSceneSelection();
   useCueCalls()
   useSetupGlobalAtoms()

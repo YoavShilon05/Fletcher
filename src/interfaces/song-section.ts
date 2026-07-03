@@ -12,12 +12,18 @@ export enum SectionNames {
   OUTRO = "OUTRO"
 }
 
-export enum MiscNames {
+export enum ExtraCueNames {
   BREAK = "BREAK",
-  IMPROV = "IMPROV"
+  IMPROV = "IMPROV",
+  UNISON = "UNISON",
+  FADE = "FADE",
+  DOUBLE_TIME = "DOUBLE_TIME",
+  HALF_TIME = "HALF_TIME",
 }
 
-export interface SongSection {
-  name: SectionNames;
+export interface CueCall<T extends string> {
+  name: T;
   timelineLocation: number;
 }
+
+export type SongSection = CueCall<SectionNames>;

@@ -17,12 +17,15 @@ export const useCueCalls = () => {
 
   const cueCall = () => {
     const nextSection = selectedSong!.structure.find(section => section.timelineLocation > currentBeat)
-    if (!nextSection || nextSection.timelineLocation - currentBeat > CALL_SECTION_PAD) return;
+    const nextExtraCall = selectedSong!.extraCalls.find(call => call.timelineLocation > currentBeat)
 
-    const distance = nextSection.timelineLocation - currentBeat;
-    console.log("distance to next section", distance, "next section", nextSection.name)
+    const nextCall = nextSection && nextExtraCall ? (nextSection.timelineLocation < nextExtraCall.timelineLocation ? nextSection : nextExtraCall) : (nextSection || nextExtraCall);
+
+    if (!nextCall || nextCall.timelineLocation - currentBeat > CALL_SECTION_PAD) return;
+
+    const distance = nextCall.timelineLocation - currentBeat;
     if ((CALL_SECTION_PAD - distance) < 1) {
-      const clipIndex = clips.findIndex(clip => clip === nextSection.name.toLowerCase());
+      const clipIndex = clips.findIndex(clip => clip === nextCall.name.toLowerCase());
       sendOsc("/live/clip_slot/fire", [0, clipIndex]);
     } else {
       if (Number.isInteger(distance) && distance <= CALL_CUE_COUNT + 1 && distance > 1) {

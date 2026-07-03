@@ -24,6 +24,6 @@ function decodeTimeSignatureValue(tsId: number) {
 
 export function parseTimeSignatureEvents (events: TimeSignatureEnumEvent[]): TimeSignatureChangeEvent[] {
   return events.map(event => {
-    return {timeSignature: decodeTimeSignatureValue(event.value), time: event.time}
+    return {timeSignature: decodeTimeSignatureValue(event.value), time: +event.time}
   })
 }

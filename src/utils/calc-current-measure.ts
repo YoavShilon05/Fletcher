@@ -6,13 +6,14 @@ import {TimeSignature} from "@/interfaces/time-signature.ts";
 
 const store = getDefaultStore();
 
-const calcMeasuresForTimeSignature = (barLengthInFourFour: number, timeSignature: TimeSignature) => {
-  return (barLengthInFourFour * timeSignature.denominator) / (4 * timeSignature.numerator)
+const calcMeasuresForTimeSignature = (barLengthInBeats: number, timeSignature: TimeSignature) => {
+  return (barLengthInBeats * timeSignature.denominator) / (4 * timeSignature.numerator)
 }
 
 export const calculateMeasure = (beat: number, song: Song) => {
-  const allTimeSignatureChanges = store.get(timeSignatureChangesAtom)
+  const allTimeSignatureChanges = store.get(timeSignatureChangesAtom);
   const timeSignatureChanges = allTimeSignatureChanges.filter(change => change.time > song.timelineLocation && change.time < beat);
+
   let accMeasure = 0;
   let pointer = song.timelineLocation;
 

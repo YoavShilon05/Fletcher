@@ -22,8 +22,6 @@ export const ClickView = () => {
       : currentBeat % timeSignature.numerator % timeSignature.numerator
     ) : null
 
-  console.log("ACTIV EBEAT", activeBeat)
-
   const circleCount = timeSignature.numerator
 
   return (
