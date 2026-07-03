@@ -1,15 +1,10 @@
-import {currentBeatAtom, selectedSongAtom} from "@/stores/store.ts";
 import {useAtomValue} from "jotai";
-import {calculateMeasure} from "@/utils/calc-current-measure.ts";
+import {currentBeatAtom, selectedSongAtom} from "@/stores/store.ts";
 import {useChart} from "@/hooks/useChart.ts";
-import {SheetViewer} from "@/components/Views/ChartView/SheetViewer.tsx";
+import {ChordViewer} from "@/components/Views/ChordView/ChordViewer.tsx";
+import {calculateMeasure} from "@/utils/calc-current-measure.ts";
 
-interface CleanChartViewProps {
-  scale?: number;
-}
-
-export const ChartView = ({ scale = 1.7 }: CleanChartViewProps) => {
-
+export const ChordView = () => {
   const beat = useAtomValue(currentBeatAtom)
   const song = useAtomValue(selectedSongAtom)
   const content = useChart(song)
@@ -25,10 +20,10 @@ export const ChartView = ({ scale = 1.7 }: CleanChartViewProps) => {
 
   return (
     <div className="w-full h-full bg-white">
-      <SheetViewer
+      <ChordViewer
         content={content}
         activeMeasure={Math.floor(calculateMeasure(beat, song))}
-        zoom={scale}
+        zoom={2}
         extraMarkers={[
           { measure: 1, label: 'Verse' },   // already in XML, just shown as example
           { measure: 9, label: 'Chorus' },

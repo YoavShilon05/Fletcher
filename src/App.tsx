@@ -10,7 +10,7 @@ import {useAtom, useAtomValue, useSetAtom} from "jotai";
 import {
   currentBeatAtom,
   currentlyPlayingAtom,
-  currentSectionAtom, fletcherTrackIndexAtom,
+  fletcherTrackIndexAtom,
   selectedSongAtom
 } from "@/stores/store.ts";
 import {usePropertyListener} from "@/hooks/usePropertyListener.ts";
@@ -23,6 +23,7 @@ import {useLoopSnapper} from "@/hooks/useLoopSnapper.ts";
 import {prepareClips} from "@/utils/prepare-clips.ts";
 import {useCueCalls} from "@/hooks/useCueCalls.ts";
 import {useFletcherTrack} from "@/hooks/useFletcherTrack.ts";
+import {ChordView} from "@/components/Views/ChordView/ChordView.tsx";
 
 function App() {
 
@@ -72,7 +73,7 @@ function App() {
   const VIEW_MAP: Record<ViewType, ReactNode> = {
     Title: <TitleView />,
     Click: <ClickView />,
-    Chords: <TitleView />,
+    Chords: <ChordView />,
     Chart: <ChartView />,
   } as const
 

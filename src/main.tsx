@@ -1,7 +1,7 @@
 //todo:::
 // chord view
 // auto scroll on chart view / chord view
-// shoutouts actually good / w-misc names
+// shoutouts actually good
 // locate fletcher track dynamically.
 // add python to git repo
 //
