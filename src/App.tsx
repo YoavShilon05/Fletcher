@@ -109,11 +109,6 @@ function App() {
         {/* Center Canvas: Dynamic presentation area */}
         <div className="flex items-center justify-center p-6 min-h-0 overflow-y-auto">
           {viewComponent}
-          {/*<div className="font-mono text-center opacity-80">*/}
-          {/*  /!* Dynamic View rendering container depending on currentView *!/*/}
-          {/*  <p className="text-sm text-card-foreground uppercase tracking-widest mb-2">{viewComponent}</p>*/}
-          {/*  <p className="text-2xl font-bold text-primary">{currentSection?.name}</p>*/}
-          {/*</div>*/}
         </div>
 
         {/* Right Side: Containerless View Buttons centered perfectly */}

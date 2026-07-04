@@ -9,10 +9,7 @@ export const ClickView = () => {
   const selectedSong = useAtomValue(selectedSongAtom)
   const isPlaying = useAtomValue(currentlyPlayingAtom);
 
-  // const beatOffset = useAtomValue(beatOffsetAtom)
-  // const activeCircleOffset = 1;
-
-  //todo: comnsider non-4 denominators and non-4 numerators
+  //todo: comnsider non-4 denominators
 
   const currentBeat = useAtomValue(currentBeatAtom);
   const timeSignature = getTimeSignature(currentBeat, selectedSong);
