@@ -25,6 +25,8 @@ import {useCueCalls} from "@/hooks/useCueCalls.ts";
 import {useFletcherTrack} from "@/hooks/useFletcherTrack.ts";
 import {ChordView} from "@/components/Views/ChordView/ChordView.tsx";
 import {useSyncTempo} from "@/hooks/useSyncTempo.ts";
+import {ConnectionBlock} from "@/components/ConnectionBlock/ConnectionBlock.tsx";
+import {useAbletonHeartbeat} from "@/hooks/useAbletonHeartbeat.ts";
 
 function App() {
 
@@ -60,6 +62,8 @@ function App() {
   useCueCalls()
   useSetupGlobalAtoms()
   useSyncTempo()
+
+  const connected = useAbletonHeartbeat()
 
   useEffect(() => {
     if (!setlist || setlist.length === 0) {
@@ -126,6 +130,7 @@ function App() {
         <SongSelector/>
       </footer>
 
+      <ConnectionBlock open={!connected} />
     </div>
   );
 }

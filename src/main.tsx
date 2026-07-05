@@ -1,7 +1,8 @@
 //todo:::
+// connection test / block
+// migration to tempo + time based synchronization
 // count-in
 // shoutouts actually good.
-// add python to git repo
 //
 // optional
 // automatically listen to als file changes (instead of having to manually F5 the project)
