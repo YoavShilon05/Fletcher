@@ -27,6 +27,8 @@ import {ChordView} from "@/components/Views/ChordView/ChordView.tsx";
 import {useSyncTempo} from "@/hooks/useSyncTempo.ts";
 import {ConnectionBlock} from "@/components/ConnectionBlock/ConnectionBlock.tsx";
 import {useAbletonHeartbeat} from "@/hooks/useAbletonHeartbeat.ts";
+import {useSyncCurrentBeat} from "@/hooks/useSyncCurrentBeat.ts";
+import {sendOsc} from "@/hooks/useOsc.ts";
 
 function App() {
 
@@ -50,7 +52,13 @@ function App() {
   }, [selectedSong]);
 
   usePropertyListener("/live/song/start_listen/is_playing", "/live/song/get/is_playing", (payload: boolean[]) => {
-    setIsPlaying(payload[0]);
+    const playing = payload[0];
+    if (playing) {
+      sendOsc("/live/song/stop_listen/beat", [])
+    } else {
+      sendOsc("/live/song/start_listen/beat", [])
+    }
+    setIsPlaying(playing);
   })
   usePropertyListener("/live/song/start_listen/beat", "/live/song/get/beat", (payload: number[]) =>
     setCurrentBeat(payload[0])
@@ -62,8 +70,9 @@ function App() {
   useCueCalls()
   useSetupGlobalAtoms()
   useSyncTempo()
+  useSyncCurrentBeat()
 
-  const connected = useAbletonHeartbeat()
+  // const connected = useAbletonHeartbeat()
 
   useEffect(() => {
     if (!setlist || setlist.length === 0) {
@@ -130,7 +139,7 @@ function App() {
         <SongSelector/>
       </footer>
 
-      <ConnectionBlock open={!connected} />
+      <ConnectionBlock open={false} />
     </div>
   );
 }

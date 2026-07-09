@@ -1,6 +1,7 @@
 import os
 import sys
 import tempfile
+import time
 import Live
 import json
 from functools import partial
@@ -396,7 +397,7 @@ class SongHandler(AbletonOSCHandler):
         # Listener for /live/song/get/beat
         #--------------------------------------------------------------------------------
         self.last_song_time = -1.0
-        
+
         def stop_beat_listener(params: Tuple[Any] = ()):
             try:
                 self.song.remove_current_song_time_listener(self.current_song_time_changed)
@@ -411,6 +412,28 @@ class SongHandler(AbletonOSCHandler):
 
         self.osc_server.add_handler("/live/song/start_listen/beat", start_beat_listener)
         self.osc_server.add_handler("/live/song/stop_listen/beat", stop_beat_listener)
+
+        #--------------------------------------------------------------------------------
+        # Listener for /live/song/get/playback_start
+        # Fires only on the transition into is_playing=True, and stamps that moment
+        # with a wall-clock time so clients can do optimistic beat-position math
+        # instead of polling current_song_time continuously.
+        #--------------------------------------------------------------------------------
+        def stop_playback_start_listener(params: Tuple[Any] = ()):
+            try:
+                self.song.remove_is_playing_listener(self.playback_started_changed)
+                self.logger.info("Removing playback_start listener")
+            except:
+                pass
+
+        def start_playback_start_listener(params: Tuple[Any] = ()):
+            stop_playback_start_listener()
+            self.logger.info("Adding playback_start listener")
+            self.song.add_is_playing_listener(self.playback_started_changed)
+
+        self.main_stop_playback_start_listener = stop_playback_start_listener
+        self.osc_server.add_handler("/live/song/start_listen/playback_start", start_playback_start_listener)
+        self.osc_server.add_handler("/live/song/stop_listen/playback_start", stop_playback_start_listener)
 
     def main_track_array_changed(self):
         """Fires when a track is created, deleted, or reordered. Re-binds name listeners."""
@@ -435,6 +458,26 @@ class SongHandler(AbletonOSCHandler):
         self.logger.info("Track names changed, broadcasting update...")
         names = tuple(track.name for track in self.song.tracks)
         self.osc_server.send("/live/song/get/track_names", names)
+
+    def playback_started_changed(self):
+        """
+        Fires on every is_playing transition. When playback starts (including
+        resuming from a pause, or starting mid-song via a cue/jump), stamps the
+        moment with a Unix timestamp alongside the beat position and tempo at
+        that instant, so clients can extrapolate beat position without polling.
+        """
+        is_playing = self.song.is_playing
+        if is_playing:
+            now = time.time()
+            # OSC floats ('f') are 32-bit and lose precision at this magnitude
+            # (a Unix timestamp only has ~128s resolution as a float32). Split
+            # into two ints instead, which carry full integer precision.
+            unix_seconds = int(now)
+            unix_millis = int(round((now - unix_seconds) * 1000))
+            self.osc_server.send(
+                "/live/song/get/playback_start",
+                (unix_seconds, unix_millis, self.song.current_song_time, self.song.tempo)
+            )
 
     def current_song_time_changed(self):
         #--------------------------------------------------------------------------------
@@ -505,7 +548,7 @@ class SongHandler(AbletonOSCHandler):
             flat_payload.append(int(sig_den))
 
         self.osc_server.send("/live/song/get/scenes", tuple(flat_payload))
-        
+
     def main_cue_array_changed(self):
         """Fires when a cue is added or deleted. Re-binds property listeners to the new list."""
         self.logger.info("Cue list array structure changed. Re-binding property listeners.")
@@ -539,6 +582,11 @@ class SongHandler(AbletonOSCHandler):
         super().clear_api()
         try:
             self.song.remove_current_song_time_listener(self.current_song_time_changed)
+        except:
+            pass
+
+        try:
+            self.song.remove_is_playing_listener(self.playback_started_changed)
         except:
             pass
 

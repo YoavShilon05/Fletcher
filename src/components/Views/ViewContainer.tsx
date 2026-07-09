@@ -1,7 +1,6 @@
-import {ReactNode, useRef} from "react";
-import {usePropertyListener} from "@/hooks/usePropertyListener.ts";
+import {ReactNode, useEffect, useRef} from "react";
 import {useAtomValue} from "jotai";
-import {beatOffsetAtom, currentlyPlayingAtom} from "@/stores/store.ts";
+import {beatOffsetAtom, currentBeatAtom, currentlyPlayingAtom} from "@/stores/store.ts";
 import "./ViewContainer.css"
 
 interface ViewContainerProps {
@@ -14,7 +13,9 @@ export const ViewContainer = ({ children }: ViewContainerProps) => {
   const isPlaying = useAtomValue(currentlyPlayingAtom);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const handleBeat = () => {
+  const currentBeat = useAtomValue(currentBeatAtom)
+
+  useEffect(() => {
     if (!isPlaying) return;
     const el = containerRef.current;
     if (!el) return;
@@ -24,9 +25,7 @@ export const ViewContainer = ({ children }: ViewContainerProps) => {
       void el.offsetWidth;
       el.classList.add("beat-flash");
     }, beatOffset);
-  };
-
-  usePropertyListener("/live/song/start_listen/beat", "/live/song/get/beat", handleBeat);
+  }, [currentBeat]);
 
   return (
     <div

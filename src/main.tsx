@@ -1,8 +1,9 @@
 //todo:::
-// connection test / block
 // migration to tempo + time based synchronization
+// allow sessions
 // count-in
 // shoutouts actually good.
+// font sizes react to window size
 //
 // optional
 // automatically listen to als file changes (instead of having to manually F5 the project)

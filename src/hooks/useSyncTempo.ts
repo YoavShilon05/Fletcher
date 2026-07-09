@@ -7,7 +7,6 @@ export const useSyncTempo = () => {
   const selectedSong = useAtomValue(selectedSongAtom)
 
   useEffect(() => {
-    console.log("SETTING TEMPOOOO", selectedSong?.tempo)
     sendOsc("/live/song/set/tempo", [selectedSong?.tempo])
   }, [selectedSong]);
 
