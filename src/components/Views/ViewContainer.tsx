@@ -30,7 +30,7 @@ export const ViewContainer = ({ children }: ViewContainerProps) => {
   return (
     <div
       ref={containerRef}
-      className="flex flex-col items-center justify-center w-full h-full text-center"
+      className="flex flex-col items-center justify-center w-full h-full text-center p-10"
     >
       {children}
     </div>

@@ -33,6 +33,7 @@ import {parseOscPayload} from "@/utils/parse-osc-payload.ts";
 // import {useAbletonHeartbeat} from "@/hooks/useAbletonHeartbeat.ts";
 import {useSyncCurrentBeat} from "@/hooks/useSyncCurrentBeat.ts";
 import {sendOsc} from "@/hooks/useOsc.ts";
+import {ViewContainer} from "@/components/Views/ViewContainer.tsx";
 
 function App() {
 
@@ -134,8 +135,8 @@ function App() {
         </div>
 
         {/* Center Canvas: Dynamic presentation area */}
-        <div className="flex items-center justify-center p-6 min-h-0 overflow-y-auto">
-          {viewComponent}
+        <div className="flex items-center justify-center min-h-0 overflow-y-auto">
+          <ViewContainer>{viewComponent}</ViewContainer>
         </div>
 
         {/* Right Side: Containerless View Buttons centered perfectly */}
