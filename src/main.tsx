@@ -1,14 +1,11 @@
-// allow sessions
+//todo::
 // count-in
 // shoutouts actually good.
-// font sizes react to window size
 //
 // optional
 // automatically listen to als file changes (instead of having to manually F5 the project)
 // add midi keyboard shortcuts
-// redesign ui
 // loop follows when you move sections
-// set project time signatures based on scene
 
 
 import React from "react";
