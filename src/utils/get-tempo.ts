@@ -3,7 +3,7 @@ import {globalTempoAtom, scenesAtom} from "@/stores/store.ts";
 
 const store = getDefaultStore();
 
-export const getTempo = (songName: string) => {
+export const getTempo = (songName?: string) => {
   const scenes = store.get(scenesAtom)
   const songScene = scenes.find(scene => scene.name === songName)
 

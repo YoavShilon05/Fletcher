@@ -38,7 +38,7 @@ export const SongCard: React.FC<SongCardProps> = ({ song, status, onClick }) => 
           {song.key}
         </div>
         <div className={`text-[10px] tracking-wide ${isSelected ? 'text-secondary' : 'text-card-foreground'}`}>
-          {song.bpm} BPM
+          {song.tempo} BPM
         </div>
       </div>
     </Card>

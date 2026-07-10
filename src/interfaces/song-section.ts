@@ -5,9 +5,12 @@ export enum SectionNames {
   INTRO = "INTRO",
   VERSE = "VERSE",
   PRE_CHORUS = "PRE_CHORUS", //todo:
+  POST_CHORUS = "POST_CHORUS",
   CHORUS = "CHORUS",
   BRIDGE = "BRIDGE",
   SOLO = "SOLO",
+  BUILDUP = "BUILDUP",
+  INTERLUDE = "INTERLUDE",
   BREAKDOWN = "BREAKDOWN",
   OUTRO = "OUTRO"
 }

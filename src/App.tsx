@@ -9,7 +9,7 @@ import {useSceneSelection} from "@/hooks/useSceneSelection.ts";
 import {useAtom, useAtomValue, useSetAtom} from "jotai";
 import {
   currentBeatAtom,
-  currentlyPlayingAtom, currentSectionAtom,
+  currentlyPlayingAtom, currentSectionAtom, delayFromMothershipAtom,
   fletcherTrackIndexAtom,
   selectedSongAtom
 } from "@/stores/store.ts";
@@ -26,7 +26,11 @@ import {useFletcherTrack} from "@/hooks/useFletcherTrack.ts";
 import {ChordView} from "@/components/Views/ChordView/ChordView.tsx";
 import {useSyncTempo} from "@/hooks/useSyncTempo.ts";
 import {ConnectionBlock} from "@/components/ConnectionBlock/ConnectionBlock.tsx";
-import {useAbletonHeartbeat} from "@/hooks/useAbletonHeartbeat.ts";
+import {useOscListener} from "@/hooks/useOsc.ts";
+import {useBroadcastHeartbeat} from "@/hooks/useBroadcastHeartbeat.ts";
+import {BROADCAST_HEARTBEAT_ADDRESS} from "@/constants.ts";
+import {parseOscPayload} from "@/utils/parse-osc-payload.ts";
+// import {useAbletonHeartbeat} from "@/hooks/useAbletonHeartbeat.ts";
 import {useSyncCurrentBeat} from "@/hooks/useSyncCurrentBeat.ts";
 import {sendOsc} from "@/hooks/useOsc.ts";
 
@@ -38,12 +42,12 @@ function App() {
     prepareClips(trackIndex);
   }, [trackIndex]);
 
-  // const [setlist] = useState<Song[]>(initialSetlist);
   const [selectedSong, setSelectedSong] = useAtom(selectedSongAtom);
   const setlist = useSetlist()
   const setIsPlaying = useSetAtom(currentlyPlayingAtom);
   const setCurrentBeat = useSetAtom(currentBeatAtom);
   const setCurrentSection = useSetAtom(currentSectionAtom);
+  const setDelayFromMothership = useSetAtom(delayFromMothershipAtom);
   const [currentView, setCurrentView] = useState<ViewType>('Title');
 
   useEffect(() => {
@@ -70,7 +74,17 @@ function App() {
   useCueCalls()
   useSetupGlobalAtoms()
   useSyncTempo()
+  useBroadcastHeartbeat()
   useSyncCurrentBeat()
+
+  useOscListener(msg => { //todo: extract to hook
+    if (msg.address === BROADCAST_HEARTBEAT_ADDRESS) {
+      const payload = parseOscPayload<number[]>(msg.args)
+      const delay = Date.now() - payload[0];
+      console.log("RECEIVED DELAY", delay)
+      setDelayFromMothership(delay)
+    }
+  })
 
   // const connected = useAbletonHeartbeat()
 

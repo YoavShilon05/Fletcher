@@ -1,5 +1,3 @@
-//todo:::
-// migration to tempo + time based synchronization
 // allow sessions
 // count-in
 // shoutouts actually good.

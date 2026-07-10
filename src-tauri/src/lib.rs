@@ -1,7 +1,15 @@
+mod band_server;
+
 use std::net::UdpSocket;
 use rosc::{OscPacket, OscMessage, OscType, encoder};
-use tauri::{AppHandle, Emitter};
+use tauri::{AppHandle, Emitter, Manager};
 use serde::Serialize;
+
+use band_server::{
+    broadcast_osc_message, new_band_state, start_band_server, get_band_server_address,
+    broadcast_message, // add this
+    OscMessagePayload as BandPayload, SharedBandState,
+};
 
 #[derive(Serialize, Clone)]
 struct OscMessagePayload {
@@ -9,18 +17,12 @@ struct OscMessagePayload {
     args: Vec<String>,
 }
 
-// --- Original greet command, kept as-is ---
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
 
 // --- OSC: send a message to Ableton ---
 #[tauri::command]
 fn send_osc(address: String, args: Vec<serde_json::Value>) -> Result<(), String> {
     let socket = UdpSocket::bind("0.0.0.0:0").map_err(|e| e.to_string())?;
 
-    // Map JSON values explicitly using your project's native serde_json crate
     let osc_args: Vec<OscType> = args
         .into_iter()
         .map(|v| match v {
@@ -54,8 +56,9 @@ fn send_osc(address: String, args: Vec<serde_json::Value>) -> Result<(), String>
     Ok(())
 }
 
-// --- OSC: background listener, emits incoming messages to the frontend ---
-fn start_osc_listener(app: AppHandle) {
+// --- OSC: background listener, emits incoming messages to the frontend
+//     AND forwards them to any connected band followers ---
+fn start_osc_listener(app: AppHandle, band_state: SharedBandState) {
     std::thread::spawn(move || {
         let socket = UdpSocket::bind("0.0.0.0:11001").expect("Failed to bind OSC listener on port 11001");
         let mut buf = [0u8; 4096];
@@ -68,7 +71,16 @@ fn start_osc_listener(app: AppHandle) {
                             address: msg.addr.clone(),
                             args: msg.args.iter().map(|a| format!("{:?}", a)).collect(),
                         };
-                        app.emit("osc-message", payload).ok();
+
+                        // existing behavior: notify the host's own Tauri webview
+                        app.emit("osc-message", payload.clone()).ok();
+
+                        // new: forward to band followers over WebSocket
+                        let band_payload = BandPayload {
+                            address: payload.address,
+                            args: payload.args,
+                        };
+                        broadcast_osc_message(&band_state, band_payload);
                     }
                 }
                 Err(e) => eprintln!("OSC recv error: {e}"),
@@ -83,10 +95,17 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_fs::init())
         .setup(|app| {
-            start_osc_listener(app.handle().clone());
+            let band_state = new_band_state();
+            app.manage(band_state.clone());
+
+            start_osc_listener(app.handle().clone(), band_state.clone());
+
+            let app_handle = app.handle().clone();
+            tauri::async_runtime::spawn(start_band_server(app_handle, band_state));
+
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![greet, send_osc])
+        .invoke_handler(tauri::generate_handler![send_osc, get_band_server_address, broadcast_message])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

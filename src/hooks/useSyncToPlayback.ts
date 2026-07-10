@@ -1,11 +1,18 @@
 import {useAtom, useAtomValue} from "jotai";
-import {currentBeatAtom, currentSectionAtom, selectedSongAtom, setlistAtom} from "@/stores/store.ts";
+import {
+  currentBeatAtom,
+  currentSectionAtom,
+  selectedSongAtom,
+  setlistAtom,
+  snapSelectionAtom
+} from "@/stores/store.ts";
 import {useEffect} from "react";
 
 export const useSyncToPlayback = () => {
 
   const [selectedSong, setSelectedSong] = useAtom(selectedSongAtom)
   const [currentSection, setCurrentSection] = useAtom(currentSectionAtom);
+  const snapSelection = useAtomValue(snapSelectionAtom)
   const currentBeat = useAtomValue(currentBeatAtom)
   const setlist = useAtomValue(setlistAtom)
 
@@ -32,6 +39,7 @@ export const useSyncToPlayback = () => {
   }
 
   useEffect(() => {
+    if (snapSelection) return; // snap selection switches sections internally, so it interferes with the sync.
     trackPlayback()
   }, [currentBeat]);
 }

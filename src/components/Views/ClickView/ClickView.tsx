@@ -15,7 +15,7 @@ export const ClickView = () => {
   const timeSignature = getTimeSignature(currentBeat, selectedSong);
   const activeBeat = isPlaying ? (
     selectedSong
-      ? calculateMeasure(currentBeat, selectedSong) * timeSignature.numerator % timeSignature.numerator
+      ? Math.round(calculateMeasure(currentBeat, selectedSong) * timeSignature.numerator) % timeSignature.numerator
       : currentBeat % timeSignature.numerator % timeSignature.numerator
     ) : null
 

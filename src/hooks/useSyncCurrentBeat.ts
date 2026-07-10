@@ -1,6 +1,6 @@
 import {usePropertyListener} from "@/hooks/usePropertyListener.ts";
 import {useAtomValue, useSetAtom} from "jotai";
-import {currentBeatAtom, currentlyPlayingAtom} from "@/stores/store.ts";
+import {currentBeatAtom, currentlyPlayingAtom, delayFromMothershipAtom} from "@/stores/store.ts";
 import {useCallback, useEffect, useRef} from "react";
 
 const MS_PER_MINUTE = 60000;
@@ -26,6 +26,8 @@ export const useSyncCurrentBeat = () => {
     }
   }, []);
 
+  const delayFromMothership = useAtomValue(delayFromMothershipAtom)
+
   // Computes the current beat from the anchor, emits it only if it's a new
   // integer beat, then schedules itself to fire again exactly at the next
   // beat boundary (not on a fixed poll interval).
@@ -37,7 +39,7 @@ export const useSyncCurrentBeat = () => {
     const msPerBeat = 1 / beatsPerMs;
 
     const elapsedMs = Date.now() - anchor.startTimeMs;
-    const beatFloat = anchor.startBeat + elapsedMs * beatsPerMs;
+    const beatFloat = anchor.startBeat + (elapsedMs - delayFromMothership) * beatsPerMs;
     const beatInt = Math.floor(beatFloat);
 
     if (beatInt !== lastEmittedBeatRef.current) {
@@ -55,7 +57,7 @@ export const useSyncCurrentBeat = () => {
 
     timeoutRef.current = setTimeout(advance, delay);
     void msPerBeat; // (kept for readability/debugging; remove if you add logging elsewhere)
-  }, [setCurrentBeat]);
+  }, [setCurrentBeat, delayFromMothership]);
 
   const handlePlaybackStart = useCallback((payload: number[]) => {
     const [unixSeconds, unixMillis, startBeat, tempo] = payload;
