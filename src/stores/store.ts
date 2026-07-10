@@ -8,7 +8,6 @@ import {TimeSignature, TimeSignatureChangeEvent} from "@/interfaces/time-signatu
 export const setlistAtom = atom<Song[]>()
 export const selectedSongAtom = atom<Song>()
 export const currentSectionAtom = atom<SongSection>()
-export const snapSelectionAtom = atom<boolean>(false)
 export const currentlyPlayingAtom = atom<boolean>(false)
 export const currentBeatAtom = atom<number>(0)
 export const beatOffsetAtom = atom<number>(0)
@@ -19,3 +18,8 @@ export const timeSignatureChangesAtom = atom<TimeSignatureChangeEvent[]>([])
 export const fletcherTrackIndexAtom = atom<number>(0)
 export const globalTempoAtom = atom<number>(0);
 export const delayFromMothershipAtom = atom<number>(0)
+
+export const fullscreenAtom = atom<boolean>(false)
+export const snapSelectionAtom = atom<boolean>(false)
+export const shotCallingAtom = atom<boolean>(true)
+export const lightScreenAtom = atom<boolean>(true)

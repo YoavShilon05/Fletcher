@@ -2,7 +2,8 @@ import {ReactNode, useEffect, useMemo, useState} from "react";
 import "./App.css";
 import {SongSelector} from "@/components/SongSelector/SongSelector.tsx";
 import {SongStructure} from "@/components/SongStructure/SongStructure.tsx";
-import {ViewSelector} from "@/components/ViewSelector/ViewSelector.tsx";
+import {ViewTabs} from "@/components/ViewTabs/ViewTabs.tsx";
+import {Toolbar} from "@/components/Toolbar/Toolbar.tsx";
 import {ViewType} from "@/interfaces/view-type.ts";
 import {useSetlist} from "@/hooks/useSetlist.ts";
 import {useSceneSelection} from "@/hooks/useSceneSelection.ts";
@@ -10,7 +11,7 @@ import {useAtom, useAtomValue, useSetAtom} from "jotai";
 import {
   currentBeatAtom,
   currentlyPlayingAtom, currentSectionAtom, delayFromMothershipAtom,
-  fletcherTrackIndexAtom,
+  fletcherTrackIndexAtom, fullscreenAtom,
   selectedSongAtom
 } from "@/stores/store.ts";
 import {usePropertyListener} from "@/hooks/usePropertyListener.ts";
@@ -40,7 +41,7 @@ function App() {
   const trackIndex = useAtomValue(fletcherTrackIndexAtom)
   useEffect(() => {
     if (trackIndex)
-    prepareClips(trackIndex);
+      prepareClips(trackIndex);
   }, [trackIndex]);
 
   const [selectedSong, setSelectedSong] = useAtom(selectedSongAtom);
@@ -49,7 +50,19 @@ function App() {
   const setCurrentBeat = useSetAtom(currentBeatAtom);
   const setCurrentSection = useSetAtom(currentSectionAtom);
   const setDelayFromMothership = useSetAtom(delayFromMothershipAtom);
+  const fullscreen = useAtomValue(fullscreenAtom)
   const [currentView, setCurrentView] = useState<ViewType>('Title');
+
+  const currentSongIndex = useMemo(
+    () => setlist?.findIndex((song) => song.name === selectedSong?.name) ?? -1,
+    [setlist, selectedSong]
+  );
+  const nextSong = useMemo(
+    () => (setlist && currentSongIndex >= 0 && currentSongIndex < setlist.length - 1)
+      ? setlist[currentSongIndex + 1]
+      : undefined,
+    [setlist, currentSongIndex]
+  );
 
   useEffect(() => {
     if (!selectedSong) return;
@@ -120,39 +133,41 @@ function App() {
     <div className="h-screen w-screen bg-background text-foreground flex flex-col overflow-hidden">
 
       {/* 1. Header Layer */}
-      <header className="flex items-center justify-center py-6 shrink-0 border-b border-border/20">
-        <h1 className="text-white font-mono text-xl select-none">
+      <header className="flex flex-col items-center justify-center gap-1 py-3 sm:py-4 shrink-0 border-b border-border/20 px-4 h-30">
+        <h1 className="text-white font-mono text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight select-none text-center truncate max-w-full">
           Now playing: {selectedSong?.name}
         </h1>
+        {nextSong && (
+          <p className="text-muted-foreground font-mono text-[10px] sm:text-[11px] tracking-widest uppercase select-none truncate max-w-full">
+            Next: {nextSong.name}
+          </p>
+        )}
       </header>
 
-      {/* 2. Main Workspace (Grid layout preventing vertical overflows) */}
-      <main className="flex-1 grid grid-cols-[auto_1fr_auto] min-h-0 w-full">
 
-        {/* Left Side: Stretched & vertically aligned Section Selector */}
-        <div className="h-full flex items-center border-r border-border/40">
+      {/* 3. Main Workspace (responsive grid — panels drop off as width narrows) */}
+      <main className="flex-1 grid grid-cols-1 lg:grid-cols-[auto_1fr] xl:grid-cols-[auto_1fr_auto] min-h-0 w-full">
+
+        {/* Left Side: Section Structure — hidden below lg */}
+        {!fullscreen && <div className="hidden lg:flex h-full items-center border-r border-border/40">
           <SongStructure/>
+        </div>}
+
+        {/* Center Canvas: Dynamic presentation area with floating toolbar */}
+        <div className="h-full">
+          {!fullscreen && <ViewTabs currentView={currentView} onViewChange={setCurrentView}/>}
+          <div className={"relative flex flex-col items-center justify-center h-full overflow-y-auto"}>
+            <Toolbar/>
+            <ViewContainer>{viewComponent}</ViewContainer>
+          </div>
         </div>
 
-        {/* Center Canvas: Dynamic presentation area */}
-        <div className="flex items-center justify-center min-h-0 overflow-y-auto">
-          <ViewContainer>{viewComponent}</ViewContainer>
-        </div>
-
-        {/* Right Side: Containerless View Buttons centered perfectly */}
-        <div className="h-full flex items-center px-4 border-l border-border/40">
-          <ViewSelector
-            currentView={currentView}
-            onViewChange={setCurrentView}
-          />
-        </div>
+        {/* Right Side: Setlist selector — hidden below xl */}
+        {!fullscreen && <div className="hidden xl:flex h-full border-l border-border/40 overflow-hidden">
+          <SongSelector/>
+        </div>}
 
       </main>
-
-      {/* 3. Footer Carousel Selector */}
-      <footer className="w-full shrink-0">
-        <SongSelector/>
-      </footer>
 
       <ConnectionBlock open={false} />
     </div>

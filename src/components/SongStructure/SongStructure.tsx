@@ -2,7 +2,6 @@ import { Play } from 'lucide-react';
 import {useAtom, useAtomValue} from "jotai";
 import {currentSectionAtom, selectedSongAtom, snapSelectionAtom} from "@/stores/store.ts";
 import {useSnapSelection} from "@/hooks/useSnapSelection.ts";
-import {Toggle} from "@/components/ui/toggle.tsx";
 import {SongSection} from "@/interfaces/song-section.ts";
 import {sendOsc} from "@/hooks/useOsc.ts";
 import {useSyncToPlayback} from "@/hooks/useSyncToPlayback.ts";
@@ -10,7 +9,7 @@ import {useSyncToPlayback} from "@/hooks/useSyncToPlayback.ts";
 export const SongStructure = () => {
 
   const selectedSong = useAtomValue(selectedSongAtom)
-  const [snapSelection, setSnapSelection] = useAtom(snapSelectionAtom)
+  const snapSelection = useAtomValue(snapSelectionAtom)
   const [currentSection, setCurrentSection] = useAtom(currentSectionAtom);
   const structure = selectedSong?.structure || []
 
@@ -26,19 +25,11 @@ export const SongStructure = () => {
   }
 
   return (
-    <aside className="w-48 h-full flex flex-col bg-background border-r border-border font-mono p-4 select-none">
+    <aside className="w-48 h-full min-h-0 flex flex-col bg-background border-r border-border font-mono p-4 select-none">
       {/* Sidebar Header */}
       <div className="text-[10px] tracking-widest uppercase text-card-foreground mb-4">
         Structure
       </div>
-      <Toggle
-        pressed={snapSelection}
-        onPressedChange={setSnapSelection}
-        className="my-5 data-[state=on]:bg-primary data-[state=on]:text-white border-primary shadow-[0_0_8px_var(--juke-glow)]"
-        variant="outline"
-      >
-        Snap Timeline
-      </Toggle>
 
       {/* Dynamic spaced out vertical track */}
       <div className="flex-1 flex flex-col justify-evenly relative py-2">

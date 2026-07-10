@@ -1,6 +1,6 @@
 import {ReactNode, useEffect, useRef} from "react";
 import {useAtomValue} from "jotai";
-import {beatOffsetAtom, currentBeatAtom, currentlyPlayingAtom} from "@/stores/store.ts";
+import {beatOffsetAtom, currentBeatAtom, currentlyPlayingAtom, lightScreenAtom} from "@/stores/store.ts";
 import "./ViewContainer.css"
 
 interface ViewContainerProps {
@@ -11,12 +11,13 @@ export const ViewContainer = ({ children }: ViewContainerProps) => {
   const beatOffset = useAtomValue(beatOffsetAtom)
 
   const isPlaying = useAtomValue(currentlyPlayingAtom);
+  const enabled = useAtomValue(lightScreenAtom)
   const containerRef = useRef<HTMLDivElement>(null);
 
   const currentBeat = useAtomValue(currentBeatAtom)
 
   useEffect(() => {
-    if (!isPlaying) return;
+    if (!isPlaying || !enabled) return;
     const el = containerRef.current;
     if (!el) return;
 
