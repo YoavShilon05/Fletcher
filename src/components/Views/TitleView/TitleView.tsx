@@ -13,11 +13,11 @@ export const TitleView = () => {
             <Separator />
             <div className="w-full text-center my-10">
             <span>
-              <span className="text-[clamp(5rem,7vw,7rem)] text-primary leading-tight py-8 mx-5">
+              <span className="text-[clamp(3rem,7vw,7rem)] text-primary leading-tight py-8 mx-5">
                 {selectedSong?.name}
               </span>
               {selectedSong?.key && <span className="text-2xl">in</span>}
-              <span className="text-[clamp(3rem,5vw,5rem)] mx-5">
+              <span className="text-[clamp(2rem,5vw,5rem)] mx-5">
                 {selectedSong?.key}
               </span>
             </span>

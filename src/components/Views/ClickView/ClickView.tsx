@@ -54,25 +54,4 @@ export const ClickView = () => {
       )}
     </div>
   );
-
-  // return (
-  //   <div className="font-mono grid grid-rows-3 h-full w-full">
-  //     <div></div>
-  //     <div className="justify-self-center flex flex-row items-center justify-between w-2/4">
-  //       {Array.from({ length: circleCount }).map((_, index) => {
-  //         const isActive = activeBeat === index;
-  //         return (
-  //           <div
-  //             key={index}
-  //             className={`w-16 h-16 rounded-full border-2 border-primary transition-all duration-150 ${
-  //               isActive
-  //                 ? "bg-primary shadow-[0_0_12px_var(--primary)]"
-  //                 : "bg-transparent"
-  //             }`}
-  //           />
-  //         );
-  //       })}
-  //     </div>        <SongInfo />
-  //   </div>
-  // );
 };
