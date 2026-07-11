@@ -42,16 +42,16 @@ export const ClickView = () => {
         </div>
       </div>
 
-      <div className="flex flex-col items-center justify-end h-full pb-[20vh]">
-        {selectedSong?.tempo && (
-          <div className="w-1/6 min-w-fit">
+      {selectedSong?.tempo && (
+        <div className="flex justify-center w-full">
+          <div className="fixed bottom-[10vh] flex flex-col items-center w-1/6 min-w-fit">
             <div className="text-muted-foreground text-4xl tracking-widest my-6 whitespace-nowrap">
               {selectedSong.tempo} BPM
             </div>
             <Separator />
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 
