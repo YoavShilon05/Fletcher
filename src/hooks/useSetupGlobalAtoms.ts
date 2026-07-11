@@ -53,6 +53,7 @@ export const useSetupGlobalAtoms = () => {
         break;
     }
   }
+
   useOscListener(handleSetupMessages)
 
   usePropertyListener(null, "/broadcast/time_signature_events", (payload: number[]) => {

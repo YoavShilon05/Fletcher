@@ -72,7 +72,7 @@
   --primary: oklch(0.65 0.22 42);              /* #ff6b35 (Juke Accent Orange) */
   --primary-foreground: oklch(0.12 0.015 274);
 
-  --secondary: oklch(0.84 0.18 84);            /* #f7c948 (Juke Accent 2 Yellow) */
+  --secondary: oklch(0.65 0.22 42);            /* #f7c948 (Juke Accent 2 Yellow) */
   --secondary-foreground: oklch(0.12 0.015 274);
 
   --muted: oklch(0.32 0.02 274);               /* #4a4a6a (Inactive) */
