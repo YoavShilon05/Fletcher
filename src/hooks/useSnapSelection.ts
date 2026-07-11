@@ -1,5 +1,5 @@
 import {sendOsc} from "@/hooks/useOsc.ts";
-import {useAtom, useAtomValue} from "jotai";
+import {useAtomValue} from "jotai";
 import {
   currentBeatAtom,
   currentlyPlayingAtom,
@@ -9,16 +9,19 @@ import {
   snapSelectionAtom
 } from "@/stores/store.ts";
 import {SongSection} from "@/interfaces/song-section.ts";
-import {useEffect} from "react";
+import {useEffect, useRef} from "react";
+import {SNAP_THRESHOLD} from "@/constants.ts";
 
 //todo if I can find a way to capture midi messages I can remove this and life will be beautiful.
 export const useSnapSelection = () => {
   const currentSong = useAtomValue(selectedSongAtom)
   const setlist = useAtomValue(setlistAtom)
-  const [currentSection, setCurrentSection] = useAtom(currentSectionAtom)
+  const currentSection = useAtomValue(currentSectionAtom)
   const snapSelection = useAtomValue(snapSelectionAtom)
   const isPlaying = useAtomValue(currentlyPlayingAtom)
   const currentBeat = useAtomValue(currentBeatAtom)
+
+  const lastBeat = useRef<number | undefined>(undefined)
 
   const snapToTimeline = () => {
     if (!currentSection || !currentSong || !setlist) return;
@@ -40,13 +43,18 @@ export const useSnapSelection = () => {
       }
     }
 
-    setCurrentSection(nextSection!);
     sendOsc(`/live/song/jump_to`, [nextSection.timelineLocation]);
     sendOsc(`/live/song/set/start_time`, [nextSection.timelineLocation]);
   };
 
   useEffect(() => {
+
+    const distance = Math.abs(currentBeat - (lastBeat.current ?? currentBeat))
+    lastBeat.current = currentBeat;
+
+    if (distance > SNAP_THRESHOLD) return;
     if (!snapSelection || isPlaying) return;
+
     snapToTimeline()
   }, [currentBeat]);
 

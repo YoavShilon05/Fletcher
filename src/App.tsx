@@ -62,8 +62,9 @@ function App() {
     }
     setIsPlaying(playing);
   })
-  usePropertyListener("/live/song/start_listen/beat", "/live/song/get/beat", (payload: number[]) =>
-    setCurrentBeat(payload[0])
+  usePropertyListener("/live/song/start_listen/beat", "/live/song/get/beat", (payload: number[]) => {
+      setCurrentBeat(payload[0])
+    }
   )
   useLoopSnapper()
   useAutoStop()

@@ -17,6 +17,7 @@ export const SongSelector = () => {
     if (index >= 0 && index < setlist.length) {
       const selected = setlist[index];
       setSelectedSong(selected);
+      sendOsc(`/live/song/jump_to`, [selected.timelineLocation]);
       sendOsc(`/live/song/set/start_time`, [selected.timelineLocation]);
     }
   };
