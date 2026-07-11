@@ -11,7 +11,7 @@ import {
 import {SongSection} from "@/interfaces/song-section.ts";
 import {useEffect} from "react";
 
-
+//todo if I can find a way to capture midi messages I can remove this and life will be beautiful.
 export const useSnapSelection = () => {
   const currentSong = useAtomValue(selectedSongAtom)
   const setlist = useAtomValue(setlistAtom)
@@ -41,7 +41,7 @@ export const useSnapSelection = () => {
     }
 
     setCurrentSection(nextSection!);
-    sendOsc(`/live/song/jump_by`, [nextSection.timelineLocation - currentBeat]); //todo if I can find a way to capture midi messages I can remove this and life will be beautiful.
+    sendOsc(`/live/song/jump_to`, [nextSection.timelineLocation]);
     sendOsc(`/live/song/set/start_time`, [nextSection.timelineLocation]);
   };
 

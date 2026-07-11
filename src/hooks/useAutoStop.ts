@@ -22,8 +22,8 @@ export const useAutoStop = () => {
 
     sendOsc("/live/song/stop_playing", [])
     if (nextSong) {
-      sendOsc(`/live/song/jump_by`, [8]);
-      // sendOsc(`/live/song/set/start_time`, [nextSong.timelineLocation])
+      // sendOsc(`/live/song/jump_by`, [8]);
+      sendOsc(`/live/song/set/start_time`, [nextSong.timelineLocation])
     }
 
   }

@@ -237,6 +237,20 @@ class SongHandler(AbletonOSCHandler):
             return tuple(self.song.scenes[index].name for index in range(scene_index_min, scene_index_max))
         self.osc_server.add_handler("/live/song/get/scenes/name", song_get_scene_names)
 
+        # --------------------------------------------------------------------------------
+        # Callbacks for Song: Jump to Beat
+        # --------------------------------------------------------------------------------
+        def song_jump_to(song, params: Tuple[Any] = ()):
+            if len(params) > 0:
+                try:
+                    target_beat = float(params[0])
+                    # Ensure the playhead doesn't jump to a negative beat time
+                    song.current_song_time = max(0.0, target_beat)
+                except (ValueError, TypeError) as e:
+                    self.logger.error("Invalid beat parameter for jump_to: %s" % str(e))
+
+        self.osc_server.add_handler("/live/song/jump_to", partial(song_jump_to, self.song))
+
         #--------------------------------------------------------------------------------
         # Callbacks for Song: Cue point properties
         #--------------------------------------------------------------------------------

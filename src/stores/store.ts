@@ -18,7 +18,6 @@ export const timeSignatureChangesAtom = atom<TimeSignatureChangeEvent[]>([])
 export const fletcherTrackIndexAtom = atom<number>(0)
 export const globalTempoAtom = atom<number>(0);
 export const delayFromMothershipAtom = atom<number>(0)
-export const localIpAtom = atom<string | undefined>()
 
 export const fullscreenAtom = atom<boolean>(false)
 export const snapSelectionAtom = atom<boolean>(false)
