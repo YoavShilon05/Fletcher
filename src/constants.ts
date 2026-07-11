@@ -15,5 +15,3 @@ export const DEATH_TIMEOUT = 1000;
 
 export const BROADCAST_HEARTBEAT_TIMEOUT = 5000;
 export const BROADCAST_HEARTBEAT_ADDRESS = "/broadcast/heartbeat"
-
-export const SNAP_THRESHOLD = 2

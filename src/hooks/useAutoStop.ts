@@ -1,4 +1,4 @@
-import {useAtomValue} from "jotai";
+import {useAtom, useAtomValue} from "jotai";
 import {currentBeatAtom, currentlyPlayingAtom, selectedSongAtom} from "@/stores/store.ts";
 import {sendOsc} from "@/hooks/useOsc.ts";
 import {useNextSong} from "@/hooks/useNextSong.ts";
@@ -7,7 +7,7 @@ import {AUTO_STOP_MARGIN} from "@/constants.ts";
 
 export const useAutoStop = () => {
 
-  const selectedSong = useAtomValue(selectedSongAtom)
+  const [selectedSong, setSelectedSong] = useAtom(selectedSongAtom)
   const nextSong = useNextSong()
   const currentlyPlaying = useAtomValue(currentlyPlayingAtom)
 
@@ -20,11 +20,15 @@ export const useAutoStop = () => {
     const distance = currentBeat - selectedSong.end;
     if (distance < 0 || distance > AUTO_STOP_MARGIN) return;
 
-    sendOsc("/live/song/stop_playing", [])
     if (nextSong) {
       // sendOsc(`/live/song/jump_by`, [8]);
       sendOsc(`/live/song/set/start_time`, [nextSong.timelineLocation])
+      // sendOsc(`/live/song/jump_by`, [nextSong.timelineLocation - currentBeat])
+      // sendOsc(`/live/song/jump_to_next_cue`, [])
+      setSelectedSong(nextSong)
     }
+
+    sendOsc("/live/song/stop_playing", [])
 
   }
 

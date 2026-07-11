@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { SongCard } from './SongCard';
-import { useAtom, useAtomValue } from "jotai";
-import { selectedSongAtom, setlistAtom } from "@/stores/store.ts";
+import {useAtom, useAtomValue, useSetAtom} from "jotai";
+import {currentSectionAtom, selectedSongAtom, setlistAtom} from "@/stores/store.ts";
 import { sendOsc } from "@/hooks/useOsc.ts";
 
 export const SongSelector = () => {
@@ -10,6 +10,7 @@ export const SongSelector = () => {
 
   const [selectedSong, setSelectedSong] = useAtom(selectedSongAtom);
   const setlist = useAtomValue(setlistAtom);
+  const setCurrentSection = useSetAtom(currentSectionAtom)
 
   const globalIndex = setlist?.findIndex((s) => s.name === selectedSong?.name) || 0;
 
@@ -32,6 +33,7 @@ export const SongSelector = () => {
     const selected = setlist[index];
 
     setSelectedSong(selected);
+    setCurrentSection(selected.structure.at(0))
     sendOsc(`/live/song/jump_to`, [selected.timelineLocation]);
     sendOsc(`/live/song/set/start_time`, [selected.timelineLocation]);
   }, [setlist, setSelectedSong]);

@@ -1,5 +1,5 @@
 import { Play } from 'lucide-react';
-import {useAtomValue} from "jotai";
+import {useAtomValue, useAtom} from "jotai";
 import {
   currentSectionAtom,
   currentBeatAtom,
@@ -15,7 +15,7 @@ export const SongStructure = () => {
 
   const selectedSong = useAtomValue(selectedSongAtom)
   const currentlyPlaying = useAtomValue(currentlyPlayingAtom)
-  const currentSection = useAtomValue(currentSectionAtom);
+  const [currentSection, setCurrentSection] = useAtom(currentSectionAtom);
   const currentBeat = useAtomValue(currentBeatAtom);
   const structure = selectedSong?.structure || []
 
@@ -24,6 +24,7 @@ export const SongStructure = () => {
 
   const onSectionSelect = (section: SongSection): void => {
     if (currentlyPlaying) return;
+    setCurrentSection(section)
     sendOsc(`/live/song/jump_to`, [section.timelineLocation]);
     sendOsc(`/live/song/set/start_time`, [section.timelineLocation]);
   }

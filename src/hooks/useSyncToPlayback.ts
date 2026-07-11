@@ -3,7 +3,7 @@ import {
   currentBeatAtom,
   currentSectionAtom,
   selectedSongAtom,
-  setlistAtom,
+  setlistAtom, snapSelectionAtom,
 } from "@/stores/store.ts";
 import {useEffect} from "react";
 
@@ -13,6 +13,7 @@ export const useSyncToPlayback = () => {
   const [currentSection, setCurrentSection] = useAtom(currentSectionAtom);
   const currentBeat = useAtomValue(currentBeatAtom)
   const setlist = useAtomValue(setlistAtom)
+  const snapSelection = useAtomValue(snapSelectionAtom)
 
   // const nextSong = useNextSong()
   
@@ -37,6 +38,7 @@ export const useSyncToPlayback = () => {
   }
 
   useEffect(() => {
+    if (snapSelection) return
     trackPlayback()
   }, [currentBeat]);
 }
