@@ -26,20 +26,17 @@ export const useSyncCurrentBeat = () => {
     }
   }, []);
 
-  const delayFromMothership = useAtomValue(delayFromMothershipAtom)
+  const delayFromMothership = useAtomValue(delayFromMothershipAtom);
 
-  // Computes the current beat from the anchor, emits it only if it's a new
-  // integer beat, then schedules itself to fire again exactly at the next
-  // beat boundary (not on a fixed poll interval).
   const advance = useCallback(() => {
     const anchor = anchorRef.current;
     if (!anchor || anchor.tempo <= 0) return;
 
     const beatsPerMs = anchor.tempo / MS_PER_MINUTE;
-    const msPerBeat = 1 / beatsPerMs;
-
     const elapsedMs = Date.now() - anchor.startTimeMs;
-    const beatFloat = anchor.startBeat + (elapsedMs - delayFromMothership) * beatsPerMs;
+    const adjustedElapsedMs = elapsedMs - delayFromMothership; // always fresh
+
+    const beatFloat = anchor.startBeat + adjustedElapsedMs * beatsPerMs;
     const beatInt = Math.floor(beatFloat);
 
     if (beatInt !== lastEmittedBeatRef.current) {
@@ -47,23 +44,22 @@ export const useSyncCurrentBeat = () => {
       setCurrentBeat(beatInt);
     }
 
-    // Time (in beats-since-start units) at which the *next* integer beat
-    // boundary occurs, converted back to a ms delay from now.
     const nextBeatOffsetFromStart = (beatInt + 1 - anchor.startBeat) / beatsPerMs;
-    const msUntilNextBeat = nextBeatOffsetFromStart - elapsedMs;
-
-    // Guard against negative/zero delays (clock jitter) collapsing into a busy loop.
+    const msUntilNextBeat = nextBeatOffsetFromStart - adjustedElapsedMs;
     const delay = Math.max(msUntilNextBeat, 1);
 
+    console.log(delay)
+
     timeoutRef.current = setTimeout(advance, delay);
-    void msPerBeat; // (kept for readability/debugging; remove if you add logging elsewhere)
+    // void msPerBeat; // (kept for readability/debugging; remove if you add logging elsewhere)
   }, [setCurrentBeat, delayFromMothership]);
 
   const handlePlaybackStart = useCallback((payload: number[]) => {
     const [unixSeconds, unixMillis, startBeat, tempo] = payload;
+    console.log("STARTED PLAYACK, DELAY:", Date.now() - (unixSeconds * 1000 + unixMillis), tempo)
 
     anchorRef.current = {
-      startTimeMs: unixSeconds * 1000 + unixMillis,
+      startTimeMs: unixSeconds * 1000 + unixMillis - 200,
       startBeat,
       tempo,
     };
