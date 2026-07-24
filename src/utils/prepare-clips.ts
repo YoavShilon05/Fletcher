@@ -5,18 +5,23 @@ import {scenesAtom} from "@/stores/store.ts";
 
 const store = getDefaultStore();
 
-const ensureSceneCount = (count: number) => {
+// Awaited and sequential: sendOsc messages are fire-and-forget UDP, so issuing
+// them without awaiting lets the underlying Tauri commands complete out of
+// order. Ableton also needs a scene to actually exist before a clip can be
+// created in it, so scene creation must fully finish before clip creation
+// starts, and each clip's create/name pair must land in order.
+const ensureSceneCount = async (count: number) => {
   const sceneCount = store.get(scenesAtom).length;
   for (let i = sceneCount; i < count; i++) {
-    sendOsc("/live/song/create_scene", [-1]);
+    await sendOsc("/live/song/create_scene", [-1]);
   }
 }
 
-export const prepareClips = (trackIndex: number, clips: readonly string[]) => {
-  ensureSceneCount(clips.length);
+export const prepareClips = async (trackIndex: number, clips: readonly string[]) => {
+  await ensureSceneCount(clips.length);
 
   for (const [index, clip] of clips.entries()) {
-    sendOsc("/live/clip_slot/load_sample", [trackIndex, index, `${CLIP_PREFIX}${clip}.${CLIP_FILE_TYPE}`,]);
+    await sendOsc("/live/clip_slot/load_sample", [trackIndex, index, `${CLIP_PREFIX}${clip}.${CLIP_FILE_TYPE}`,]);
   }
 }
 
@@ -25,11 +30,11 @@ const toTitleCase = (value: string) =>
 
 // Control clips are pure MIDI triggers (no audio content), so they're created
 // directly via the Live API instead of looking up a sample by name.
-export const prepareControlClips = (trackIndex: number, clips: readonly string[]) => {
-  ensureSceneCount(clips.length);
+export const prepareControlClips = async (trackIndex: number, clips: readonly string[]) => {
+  await ensureSceneCount(clips.length);
 
   for (const [index, clip] of clips.entries()) {
-    sendOsc("/live/clip_slot/create_clip", [trackIndex, index, CONTROL_CLIP_LENGTH_BEATS]);
-    sendOsc("/live/clip/set/name", [trackIndex, index, toTitleCase(clip)]);
+    await sendOsc("/live/clip_slot/create_clip", [trackIndex, index, CONTROL_CLIP_LENGTH_BEATS]);
+    await sendOsc("/live/clip/set/name", [trackIndex, index, toTitleCase(clip)]);
   }
 }

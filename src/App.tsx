@@ -49,11 +49,6 @@ function App() {
 
   usePropertyListener("/live/song/start_listen/is_playing", "/live/song/get/is_playing", (payload: boolean[]) => {
     const playing = payload[0];
-    if (playing) {
-      sendOsc("/live/song/stop_listen/beat", [])
-    } else {
-      sendOsc("/live/song/start_listen/beat", [])
-    }
     setIsPlaying(playing);
   })
   usePropertyListener("/live/song/start_listen/beat", "/live/song/get/beat", (payload: number[]) => {
