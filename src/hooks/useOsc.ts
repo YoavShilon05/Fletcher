@@ -12,8 +12,6 @@ const subscribers = new Set<(msg: OscMessage) => void>();
 function ensureSocket() {
     if (ws) return; // already connecting or open — don't open a second one
 
-    console.log("CREATING WEBSOCKET")
-
     ws = new WebSocket(`ws://${window.location.host}/ws`);
 
     ws.onmessage = (event) => {
@@ -22,7 +20,6 @@ function ensureSocket() {
     };
 
     ws.onclose = () => {
-        console.log("CLOSED WEBSOCKET")
         ws = null; // allow a future subscriber to reopen it
         // TODO: reconnect-with-backoff goes here eventually
     };

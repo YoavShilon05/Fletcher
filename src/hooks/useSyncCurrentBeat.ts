@@ -48,15 +48,12 @@ export const useSyncCurrentBeat = () => {
     const msUntilNextBeat = nextBeatOffsetFromStart - adjustedElapsedMs;
     const delay = Math.max(msUntilNextBeat, 1);
 
-    console.log(delay)
-
     timeoutRef.current = setTimeout(advance, delay);
     // void msPerBeat; // (kept for readability/debugging; remove if you add logging elsewhere)
   }, [setCurrentBeat, delayFromMothership]);
 
   const handlePlaybackStart = useCallback((payload: number[]) => {
     const [unixSeconds, unixMillis, startBeat, tempo] = payload;
-    console.log("STARTED PLAYACK, DELAY:", Date.now() - (unixSeconds * 1000 + unixMillis), tempo)
 
     anchorRef.current = {
       startTimeMs: unixSeconds * 1000 + unixMillis - 200,

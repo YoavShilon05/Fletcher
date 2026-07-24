@@ -5,9 +5,12 @@ import {Toggle} from "@/components/ui/toggle.tsx";
 import {Button} from "@/components/ui/button.tsx";
 import {useState} from "react";
 import {QRModal} from "@/components/QRModal/QRModal.tsx";
+import {useClipControls} from "@/hooks/useClipControls.ts";
 
 export const Toolbar = () => {
 
+  //todo: add 'generate fletcher tracks'
+  useClipControls()
   const setSnapSelection = useSetAtom(snapSelectionAtom)
   const setFullscreen = useSetAtom(fullscreenAtom)
   const setShotCalling = useSetAtom(shotCallingAtom) //todo: implement

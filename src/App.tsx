@@ -80,7 +80,6 @@ function App() {
     if (msg.address === BROADCAST_HEARTBEAT_ADDRESS) {
       const payload = parseOscPayload<number[]>(msg.args)
       const delay = Date.now() - payload[0];
-      console.log("RECEIVED DELAY", delay)
       setDelayFromMothership(delay)
     }
   })
