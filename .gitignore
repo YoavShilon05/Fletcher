@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Vendored webmscore dist — copied from node_modules by scripts/copy-webmscore.mjs
+public/webmscore
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

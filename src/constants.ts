@@ -19,3 +19,8 @@ export const DEATH_TIMEOUT = 1000;
 
 export const BROADCAST_HEARTBEAT_TIMEOUT = 5000;
 export const BROADCAST_HEARTBEAT_ADDRESS = "/broadcast/heartbeat"
+
+// Charts are authored as native MuseScore files and baked to SVG on first open.
+export const CHART_SOURCE_EXTENSION = "mscz"
+// Host -> followers: "song <name> is baked and fetchable at key <songKey>".
+export const CHART_READY_ADDRESS = "/broadcast/chart_ready"

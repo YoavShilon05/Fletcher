@@ -7,7 +7,7 @@ use serde::Serialize;
 
 use band_server::{
     broadcast_osc_message, new_band_state, start_band_server, get_band_server_address,
-    broadcast_message, // add this
+    broadcast_message, get_chart_cache_dir,
     OscMessagePayload as BandPayload, SharedBandState,
 };
 
@@ -105,7 +105,7 @@ pub fn run() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![send_osc, get_band_server_address, broadcast_message])
+        .invoke_handler(tauri::generate_handler![send_osc, get_band_server_address, broadcast_message, get_chart_cache_dir])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

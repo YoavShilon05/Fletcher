@@ -5,8 +5,8 @@ import {DEATH_TIMEOUT, PING_INTERVAL} from "@/constants.ts";
 
 export const useAbletonHeartbeat = () => {
   const [isConnected, setIsConnected] = useState(false)
-  const pingTimerRef = useRef<NodeJS.Timeout | null>(null)
-  const deathTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const pingTimerRef = useRef<number | null>(null)
+  const deathTimerRef = useRef<number | null>(null)
 
   const receiveConnectedMessages = (msg: OscMessage) => {
     if (msg.address !== "/live/test" && msg.address !== "/live/startup") return;

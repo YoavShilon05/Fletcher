@@ -103,11 +103,27 @@ fn frontend_dist_path(app: &AppHandle) -> std::path::PathBuf {
     }
 }
 
+/// Where baked chart assets (SVG pages, position manifests, MusicXML) live.
+/// The host writes here via the fs plugin; the band server serves it at /charts.
+pub fn chart_cache_dir(app: &AppHandle) -> std::path::PathBuf {
+    app.path()
+        .app_data_dir()
+        .expect("failed to resolve app data dir")
+        .join("chart-cache")
+}
+
 pub async fn start_band_server(app: AppHandle, state: SharedBandState) {
     let dist_path = frontend_dist_path(&app);
 
+    let charts_path = chart_cache_dir(&app);
+    // Ensure it exists so ServeDir has a root and the host's first write succeeds.
+    if let Err(e) = std::fs::create_dir_all(&charts_path) {
+        eprintln!("Failed to create chart cache dir {charts_path:?}: {e}");
+    }
+
     let router = Router::new()
         .route("/ws", get(ws_handler))
+        .nest_service("/charts", ServeDir::new(charts_path))
         .fallback_service(ServeDir::new(dist_path))
         .with_state(state);
 
@@ -129,6 +145,15 @@ pub async fn start_band_server(app: AppHandle, state: SharedBandState) {
 pub fn get_band_server_address() -> Result<String, String> {
     let ip = local_ip_address::local_ip().map_err(|e| e.to_string())?;
     Ok(format!("{ip}:{BAND_SERVER_PORT}"))
+}
+
+/// Absolute path the frontend writes baked chart assets to (matches what the
+/// band server serves at /charts). Created here so the first write can't race.
+#[tauri::command]
+pub fn get_chart_cache_dir(app: AppHandle) -> Result<String, String> {
+    let dir = chart_cache_dir(&app);
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    Ok(dir.to_string_lossy().to_string())
 }
 
 #[tauri::command]

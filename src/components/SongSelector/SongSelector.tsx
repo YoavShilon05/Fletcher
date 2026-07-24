@@ -18,7 +18,7 @@ export const SongSelector = () => {
   const [localIndex, setLocalIndex] = useState(globalIndex);
   const localIndexRef = useRef(localIndex);
 
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceTimerRef = useRef<number | null>(null);
   const scrollThrottleRef = useRef<boolean>(false);
 
   // Sync back to local if the global state changes externally

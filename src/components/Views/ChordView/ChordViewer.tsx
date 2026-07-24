@@ -1,41 +1,24 @@
-// Suggested location: src/components/Views/ChartView/ChordViewer.tsx
-//
-// Drop-in alternative to SheetViewer: same props (content / activeMeasure /
-// zoom / extraMarkers), so ChartView can swap between the two without any
-// other changes. OSMD itself has no "chords only" render mode — this is a
-// small custom lead-sheet grid built from the chord symbols already present
-// in the MusicXML (see extract-chords.ts), not from note analysis.
+// A small custom lead-sheet grid built from the chord symbols present in the
+// MusicXML (see extract-chords.ts), not from note analysis. Same props as
+// SheetViewer (content / activeMeasure / zoom).
 
 import { useEffect, useMemo, useRef } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { parseChordsFromMusicXml, type MeasureChords } from '@/utils/extract-chords';
 
-interface SectionMarker {
-  /** 1-indexed measure number */
-  measure: number;
-  label: string;
-}
-
 interface Props {
   content: string;
   /** 0-indexed, matches OSMD's MeasureList indexing (same convention as SheetViewer) */
   activeMeasure?: number;
   zoom?: number;
-  extraMarkers?: SectionMarker[];
 }
 
-export function ChordViewer({ content, activeMeasure, zoom = 1.0, extraMarkers = [] }: Props) {
+export function ChordViewer({ content, activeMeasure, zoom = 1.0 }: Props) {
   const measures = useMemo<MeasureChords[]>(
     () => (content ? parseChordsFromMusicXml(content) : []),
     [content],
   );
-
-  const markerByMeasureIndex = useMemo(() => {
-    const map = new Map<number, string>();
-    extraMarkers.forEach((m) => map.set(m.measure - 1, m.label));
-    return map;
-  }, [extraMarkers]);
 
   // Keep the active measure in view as the song plays, without re-rendering the grid.
   const cellRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -71,7 +54,6 @@ export function ChordViewer({ content, activeMeasure, zoom = 1.0, extraMarkers =
       >
         {measures.map((m) => {
           const isActive = m.measureIndex === activeMeasure;
-          const marker = markerByMeasureIndex.get(m.measureIndex);
 
           return (
             <div
@@ -80,14 +62,6 @@ export function ChordViewer({ content, activeMeasure, zoom = 1.0, extraMarkers =
               // lead sheets are conventionally grouped into 4-bar phrases.
               className={cn('flex flex-col', m.measureIndex > 0 && m.measureIndex % 4 === 0 && 'ml-3')}
             >
-              <div className="mb-1 h-4">
-                {marker && (
-                  <span className="inline-flex items-center rounded-sm border border-neutral-400 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-neutral-600">
-                    {marker}
-                  </span>
-                )}
-              </div>
-
               <div
                 ref={(el) => { cellRefs.current[m.measureIndex] = el; }}
                 className={cn(

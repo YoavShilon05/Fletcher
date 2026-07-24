@@ -3,11 +3,12 @@ import {OscMessage} from "osc";
 import {useEffect} from "react";
 import {parseOscPayload} from "@/utils/parse-osc-payload.ts";
 import {useSetAtom} from "jotai";
-import {filePathAtom, globalTempoAtom, globalTimeSignatureAtom, timeSignatureChangesAtom} from "@/stores/store.ts";
+import {chartReadyTickAtom, filePathAtom, globalTempoAtom, globalTimeSignatureAtom, timeSignatureChangesAtom} from "@/stores/store.ts";
 import {loadAls} from "@/utils/parse-als.ts";
 import {parseTimeSignatureEvents} from "@/utils/parse-time-signature-events.ts";
 import {usePropertyListener} from "@/hooks/usePropertyListener.ts";
 import {TimeSignatureChangeEvent} from "@/interfaces/time-signature.ts";
+import {CHART_READY_ADDRESS} from "@/constants.ts";
 
 export const useSetupGlobalAtoms = () => {
 
@@ -15,11 +16,16 @@ export const useSetupGlobalAtoms = () => {
   const setFilePath = useSetAtom(filePathAtom)
   const setTimeSignatureChanges = useSetAtom(timeSignatureChangesAtom)
   const setGlobalTempo = useSetAtom(globalTempoAtom)
+  const bumpChartReady = useSetAtom(chartReadyTickAtom)
 
   const handleSetupMessages = async (msg: OscMessage) => {
 
     const payload = parseOscPayload<(string | number)[]>(msg.args)
     switch (msg.address) {
+      case CHART_READY_ADDRESS:
+        // Host baked a chart — nudge followers to re-resolve the /charts index.
+        bumpChartReady((t) => t + 1)
+        break;
       case "/live/song/get/tempo":
         setGlobalTempo(payload[0] as number)
         break;

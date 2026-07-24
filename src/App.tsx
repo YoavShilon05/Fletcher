@@ -31,9 +31,7 @@ import {useOscListener} from "@/hooks/useOsc.ts";
 import {useBroadcastHeartbeat} from "@/hooks/useBroadcastHeartbeat.ts";
 import {BROADCAST_HEARTBEAT_ADDRESS} from "@/constants.ts";
 import {parseOscPayload} from "@/utils/parse-osc-payload.ts";
-// import {useAbletonHeartbeat} from "@/hooks/useAbletonHeartbeat.ts";
 import {useSyncCurrentBeat} from "@/hooks/useSyncCurrentBeat.ts";
-import {sendOsc} from "@/hooks/useOsc.ts";
 import {ViewContainer} from "@/components/Views/ViewContainer.tsx";
 import {AppHeader} from "@/components/AppHeader/AppHeader.tsx";
 

@@ -1,19 +1,16 @@
-import { useEffect, useRef, useState } from 'react';
-import { OpenSheetMusicDisplay, unitInPixels } from 'opensheetmusicdisplay';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
-
-interface SectionMarker {
-  /** 1-indexed measure number */
-  measure: number;
-  label: string;
-}
+import type { Positions } from '@/lib/webmscore/types';
 
 interface Props {
-  content: Blob | string;
-  /** 0-indexed */
+  /** Pre-rendered SVG page strings, in page order (from the bake). */
+  pages: string[];
+  /** Measure bounding boxes for these pages (webmscore measurePositions). */
+  positions: Positions;
+  /** 0-indexed measure to highlight */
   activeMeasure?: number;
+  /** Zoom multiplier on top of fit-to-width. 1 = pages fill the container width. */
   zoom?: number;
-  extraMarkers?: SectionMarker[];
 }
 
 interface MeasureRect {
@@ -23,207 +20,120 @@ interface MeasureRect {
   h: number;
 }
 
-interface MarkerRect {
-  rect: MeasureRect;
-  label: string;
-}
+// Vertical gap between stacked pages, in scaled (screen) px.
+const PAGE_GAP = 24;
 
-function getMeasureRect(
-  osmd: OpenSheetMusicDisplay,
+// Map a measure's SVG-pixel box to a screen-pixel rect, accounting for the page
+// it sits on and the display scale. `positions.elements` is indexed by measure.
+function measureRectFor(
+  positions: Positions,
   measureIndex: number,
+  scale: number,
 ): MeasureRect | null {
-  const measureList = osmd.GraphicSheet?.MeasureList;
-  if (!measureList?.length) return null;
+  const el = positions.elements[measureIndex];
+  if (!el) return null;
 
-  const scale = unitInPixels * osmd.zoom;
-  const staffEntries = measureList[measureIndex];
-  if (!staffEntries?.length) return null;
+  const pageStride = positions.pageSize.height * scale + PAGE_GAP;
+  const pageOffsetY = el.page * pageStride;
 
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-  let found = false;
-
-  for (const gm of staffEntries) {
-    if (!gm) continue;
-
-    const bb = gm.PositionAndShape;
-    const x = bb.AbsolutePosition.x * scale;
-    const y = bb.AbsolutePosition.y * scale;
-    const w = bb.Size.width * scale;
-
-    // Size.height comes from borderTop/borderBottom which OSMD resets to 0
-    // during layout passes triggered by autoResize. Use the VexFlow stave's
-    // own height instead — it's set directly by VexFlow and never zeroed.
-    // getVFStave() is declared public on VexFlowMeasure.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const stave = (gm as any).getVFStave?.() ?? (gm as any).stave;
-    // stave.height is the inter-line span in px; stave.options.num_lines
-    // and space_above_staff_ln give the full rendered extent. The simplest
-    // correct value is stave.getBottomY() - stave.getTopLineTopY() but a
-    // safe fallback is just using the OSMD height when stave is unavailable.
-    let h = bb.Size.height * scale;
-    if (stave) {
-      const top = stave.getTopLineTopY?.() ?? stave.getYForLine?.(0) ?? stave.y;
-      const bot = stave.getBottomY?.() ?? (stave.y + stave.height);
-      const staveH = (bot - top) * osmd.zoom;
-      if (staveH > 0) h = staveH;
-    }
-
-    minX = Math.min(minX, x);
-    minY = Math.min(minY, y);
-    maxX = Math.max(maxX, x + w);
-    maxY = Math.max(maxY, y + h);
-    found = true;
-  }
-
-  if (!found) return null;
-  return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
+  return {
+    x: el.x * scale,
+    y: pageOffsetY + el.y * scale,
+    w: el.sx * scale,
+    h: el.sy * scale,
+  };
 }
 
-// Section-marker label size, in constant screen px (deliberately not
-// zoom-scaled — a fixed-size annotation reads better at any zoom level
-// than one that grows with the staff).
-const MARKER_HEIGHT = 20;
-const MARKER_GAP = 4;
-
-export function SheetViewer({
-                              content,
-                              activeMeasure,
-                              zoom = 1.0,
-                              extraMarkers = [],
-                            }: Props) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  // Store the OSMD instance in a ref, never in state — state triggers re-renders
-  const osmdRef = useRef<OpenSheetMusicDisplay | null>(null);
-  // Ref on the highlight box itself, so we can ask the browser to scroll it
-  // into view without re-implementing viewport math by hand.
+export function SheetViewer({ pages, positions, activeMeasure, zoom = 1 }: Props) {
+  const scrollRef = useRef<HTMLDivElement>(null);
   const highlightRef = useRef<HTMLDivElement>(null);
 
-  const [highlightRect, setHighlightRect] = useState<MeasureRect | null>(null);
-  const [markerRects, setMarkerRects] = useState<MarkerRect[]>([]);
+  // Width available for the sheet, tracked so pages fit-to-width responsively.
+  const [containerWidth, setContainerWidth] = useState(0);
 
-  /** Call after every render (content/zoom load, or activeMeasure change) to refresh overlay positions. */
-  const updateOverlays = () => {
-    const osmd = osmdRef.current;
-    if (!osmd) {
-      setHighlightRect(null);
-      setMarkerRects([]);
-      return;
-    }
-
-    setHighlightRect(activeMeasure != null ? getMeasureRect(osmd, activeMeasure) : null);
-
-    const markers: MarkerRect[] = [];
-    for (const marker of extraMarkers) {
-      const rect = getMeasureRect(osmd, marker.measure - 1); // markers are 1-indexed
-      if (rect) markers.push({ rect, label: marker.label });
-    }
-    setMarkerRects(markers);
-  };
-
-  // ── 1. Create OSMD instance exactly once ─────────────────────────────────
-  useEffect(() => {
-
-    if (!containerRef.current) return;
-
-    osmdRef.current = new OpenSheetMusicDisplay(containerRef.current, {
-      backend: 'svg',
-      drawTitle: false,
-      drawComposer: false,
-      drawingParameters: 'compacttight',
-      // We re-layout explicitly via our own render() calls below. Leaving
-      // this on lets OSMD re-render itself behind our back on container
-      // resize, which would silently desync our overlay positions.
-      autoResize: false,
-    });
-
-    return () => {
-      osmdRef.current = null;
-      if (containerRef.current) {
-        containerRef.current.innerHTML = '';
-      }
-    };
+  useLayoutEffect(() => {
+    const node = scrollRef.current;
+    if (!node) return;
+    const update = () => setContainerWidth(node.clientWidth);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(node);
+    return () => ro.disconnect();
   }, []);
 
-  // ── 2. Load + render whenever content changes ─────────────────────────────
-  useEffect(() => {
-    const osmd = osmdRef.current;
-    if (!osmd || !content) return;
+  const pageWidth = positions.pageSize.width || 1;
+  // fit-to-width, then apply the user zoom. Guard against a 0-width first paint.
+  const scale = containerWidth > 0 ? (containerWidth / pageWidth) * zoom : zoom;
 
-    osmd
-      .load(content)
-      .then(() => {
-        osmd.zoom = zoom;
-        osmd.render();
-        updateOverlays();
-      })
-      .catch((err) => {
-        console.error('OSMD load error:', err);
-      });
-  }, [content]); // eslint-disable-line
+  const scaledPageWidth = pageWidth * scale;
+  const scaledPageHeight = positions.pageSize.height * scale;
 
-  // ── 3. Re-render on zoom change (after initial load) ─────────────────────
-  useEffect(() => {
-    const osmd = osmdRef.current;
-    if (!osmd) return;
-    osmd.zoom = zoom;
-    osmd.render();
-    updateOverlays();
-  }, [zoom]); // eslint-disable-line
+  // Inject each SVG once per `pages` change; scale the whole page with a CSS
+  // transform so we don't depend on the SVG carrying a viewBox.
+  const pageNodes = useMemo(
+    () =>
+      pages.map((svg, i) => (
+        <div
+          key={i}
+          style={{
+            width: scaledPageWidth,
+            height: scaledPageHeight,
+            marginBottom: i < pages.length - 1 ? PAGE_GAP : 0,
+            overflow: 'hidden',
+          }}
+        >
+          <div
+            style={{
+              width: pageWidth,
+              height: positions.pageSize.height,
+              transform: `scale(${scale})`,
+              transformOrigin: '0 0',
+            }}
+            dangerouslySetInnerHTML={{ __html: svg }}
+          />
+        </div>
+      )),
+    // Rebuild when the SVGs or the scale change.
+    [pages, scale, scaledPageWidth, scaledPageHeight, pageWidth, positions.pageSize.height],
+  );
 
-  // ── 4. Reposition highlight when activeMeasure changes (no re-render) ─────
-  useEffect(() => {
-    updateOverlays();
-  }, [activeMeasure]); // eslint-disable-line
+  const highlightRect =
+    activeMeasure != null ? measureRectFor(positions, activeMeasure, scale) : null;
 
-  // ── 5. Auto-scroll the active measure into view — only when it's actually
-  //       outside the visible area, thanks to scrollIntoView's block:'nearest'.
+  // Auto-scroll the active measure into view only when it's off-screen.
   useEffect(() => {
     if (highlightRect && highlightRef.current) {
-      highlightRef.current.scrollIntoView({
-        behavior: 'smooth',
-        block: 'nearest',
-        inline: 'nearest',
-      });
+      highlightRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
     }
-  }, [highlightRect]);
+    // Depend on the measure/position, not the object identity.
+  }, [highlightRect?.x, highlightRect?.y]);
 
   return (
-    <ScrollArea className="h-full w-full">
-      {/* Explicit block container — flex parents will try to shrink this. */}
-      <div className="relative w-full block">
-        {/* OSMD mounts here. Avoid any padding/margin that would shift the
-            SVG relative to this div — it breaks the coordinate math. */}
-        <div ref={containerRef} className="w-full"/>
+    // The absolute wrapper pins the scroll box to the parent slot's size, so wide/
+    // tall sheet content scrolls *inside* here instead of stretching the page. The
+    // parent (ChartView) must be `relative` with a bounded height.
+    <div className="absolute inset-0">
+      <ScrollArea className="h-full w-full" viewportRef={scrollRef}>
+        <div className="relative block" style={{ width: scaledPageWidth }}>
+          {pageNodes}
 
-        {highlightRect && (
-          <div
-            ref={highlightRef}
-            className="pointer-events-none absolute rounded-sm transition-all duration-200 ease-out"
-            style={{
-              left: highlightRect.x,
-              top: highlightRect.y,
-              width: highlightRect.w,
-              height: highlightRect.h,
-              backgroundColor: 'rgba(250, 204, 21, 0.25)', // yellow-400/25
-              outline: '2px solid rgba(250, 204, 21, 0.7)',
-              boxShadow: '0 0 14px rgba(250, 204, 21, 0.35)',
-            }}
-          />
-        )}
-
-        {markerRects.map(({ rect, label }, i) => (
-          <span
-            key={i}
-            className="pointer-events-none absolute inline-flex items-center whitespace-nowrap rounded-sm border border-neutral-400 bg-white px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-neutral-600 transition-all duration-200 ease-out"
-            style={{
-              left: rect.x,
-              top: rect.y - MARKER_HEIGHT - MARKER_GAP,
-            }}
-          >
-            {label}
-          </span>
-        ))}
-      </div>
-    </ScrollArea>
+          {highlightRect && (
+            <div
+              ref={highlightRef}
+              className="pointer-events-none absolute rounded-sm transition-all duration-200 ease-out"
+              style={{
+                left: highlightRect.x,
+                top: highlightRect.y,
+                width: highlightRect.w,
+                height: highlightRect.h,
+                backgroundColor: 'rgba(250, 204, 21, 0.25)', // yellow-400/25
+                outline: '2px solid rgba(250, 204, 21, 0.7)',
+                boxShadow: '0 0 14px rgba(250, 204, 21, 0.35)',
+              }}
+            />
+          )}
+        </div>
+      </ScrollArea>
+    </div>
   );
 }
