@@ -13,7 +13,7 @@ export const Toolbar = () => {
   useClipControls()
   const setSnapSelection = useSetAtom(snapSelectionAtom)
   const setFullscreen = useSetAtom(fullscreenAtom)
-  const setShotCalling = useSetAtom(shotCallingAtom) //todo: implement
+  const setShotCalling = useSetAtom(shotCallingAtom)
   const setLightScreen = useSetAtom(lightScreenAtom)
   const [showQr, setShowQr] = useState<boolean>(false);
 

@@ -3,6 +3,7 @@ import {
   currentBeatAtom,
   currentlyPlayingAtom,
   selectedSongAtom,
+  shotCallingAtom,
 } from "@/stores/store.ts";
 import {sendOsc} from "@/hooks/useOsc.ts";
 import {useEffect} from "react";
@@ -14,6 +15,7 @@ export const useCueCalls = () => {
   const selectedSong = useAtomValue(selectedSongAtom)
   const isPlaying = useAtomValue(currentlyPlayingAtom)
   const currentBeat = useAtomValue(currentBeatAtom)
+  const shotCalling = useAtomValue(shotCallingAtom)
 
   const cueCall = () => {
     const nextSection = selectedSong!.structure.find(section => section.timelineLocation > currentBeat)
@@ -36,7 +38,7 @@ export const useCueCalls = () => {
   }
 
   useEffect(() => {
-    if (!isPlaying || !selectedSong) return;
+    if (!isPlaying || !selectedSong || !shotCalling) return;
     cueCall()
   }, [currentBeat]);
 
