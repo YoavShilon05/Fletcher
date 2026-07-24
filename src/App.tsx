@@ -11,7 +11,7 @@ import {useAtom, useAtomValue, useSetAtom} from "jotai";
 import {
   currentBeatAtom,
   currentlyPlayingAtom, delayFromMothershipAtom,
-  fletcherTrackIndexAtom, fullscreenAtom,
+  fullscreenAtom,
   selectedSongAtom
 } from "@/stores/store.ts";
 import {usePropertyListener} from "@/hooks/usePropertyListener.ts";
@@ -21,9 +21,9 @@ import {ClickView} from "@/components/Views/ClickView/ClickView.tsx";
 import {ChartView} from "@/components/Views/ChartView/ChartView.tsx";
 import {useSetupGlobalAtoms} from "@/hooks/useSetupGlobalAtoms.ts";
 import {useLoopSnapper} from "@/hooks/useLoopSnapper.ts";
-import {prepareClips} from "@/utils/prepare-clips.ts";
 import {useCueCalls} from "@/hooks/useCueCalls.ts";
 import {useFletcherTrack} from "@/hooks/useFletcherTrack.ts";
+import {useClipControls} from "@/hooks/useClipControls.ts";
 import {ChordView} from "@/components/Views/ChordView/ChordView.tsx";
 import {useSyncTempo} from "@/hooks/useSyncTempo.ts";
 import {ConnectionBlock} from "@/components/ConnectionBlock/ConnectionBlock.tsx";
@@ -39,15 +39,9 @@ import {AppHeader} from "@/components/AppHeader/AppHeader.tsx";
 
 function App() {
 
-  const trackIndex = useAtomValue(fletcherTrackIndexAtom)
-  useEffect(() => {
-    if (trackIndex)
-      prepareClips(trackIndex);
-  }, [trackIndex]);
-
   const [selectedSong, setSelectedSong] = useAtom(selectedSongAtom);
   const setlist = useSetlist()
-  const setIsPlaying = useSetAtom(currentlyPlayingAtom);
+  const [currentlyPlaying, setIsPlaying] = useAtom(currentlyPlayingAtom);
   const setCurrentBeat = useSetAtom(currentBeatAtom);
   const setDelayFromMothership = useSetAtom(delayFromMothershipAtom);
   const fullscreen = useAtomValue(fullscreenAtom)
@@ -63,12 +57,14 @@ function App() {
     setIsPlaying(playing);
   })
   usePropertyListener("/live/song/start_listen/beat", "/live/song/get/beat", (payload: number[]) => {
-      setCurrentBeat(payload[0])
+    if (currentlyPlaying) return;
+    setCurrentBeat(payload[0])
     }
   )
   useLoopSnapper()
   useAutoStop()
   useFletcherTrack()
+  useClipControls()
   useSceneSelection();
   useCueCalls()
   useSetupGlobalAtoms()

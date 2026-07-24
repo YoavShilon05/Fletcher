@@ -15,7 +15,8 @@ export const scenesAtom = atom<Scene[]>([])
 export const globalTimeSignatureAtom = atom<TimeSignature>({numerator: 4, denominator: 4})
 export const filePathAtom = atom<string>()
 export const timeSignatureChangesAtom = atom<TimeSignatureChangeEvent[]>([])
-export const fletcherTrackIndexAtom = atom<number>(0)
+export const fletcherCountTrackIndexAtom = atom<number>(-1)
+export const fletcherControlTrackIndexAtom = atom<number>(-1)
 export const globalTempoAtom = atom<number>(0);
 export const delayFromMothershipAtom = atom<number>(0)
 

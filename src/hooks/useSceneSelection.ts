@@ -1,6 +1,6 @@
 import {Scene} from "@/interfaces/scene.ts";
 import {useAtom, useAtomValue, useSetAtom} from "jotai";
-import {scenesAtom, selectedSongAtom, setlistAtom} from "@/stores/store.ts";
+import {scenesAtom, selectedSongAtom, setlistAtom, snapSelectionAtom} from "@/stores/store.ts";
 import {usePropertyListener} from "@/hooks/usePropertyListener.ts";
 import {sendOsc} from "@/hooks/useOsc.ts";
 
@@ -8,6 +8,7 @@ import {sendOsc} from "@/hooks/useOsc.ts";
 export const useSceneSelection = () => {
 
   const setlist = useAtomValue(setlistAtom)
+  const snapSelection = useAtomValue(snapSelectionAtom)
   const setSelectedSong = useSetAtom(selectedSongAtom)
   const [scenes, setScenes] = useAtom(scenesAtom);
 
@@ -34,6 +35,7 @@ export const useSceneSelection = () => {
   }
 
   const selectSong = (payload: (number | string)[]) => {
+    if (!snapSelection) return;
     const payloadSceneIndex = payload[0] as number;
     const songName = scenes[payloadSceneIndex].name;
 

@@ -1,9 +1,9 @@
 import {useAtom, useAtomValue} from "jotai";
-import {currentBeatAtom, currentlyPlayingAtom, selectedSongAtom} from "@/stores/store.ts";
+import {currentlyPlayingAtom, selectedSongAtom} from "@/stores/store.ts";
 import {sendOsc} from "@/hooks/useOsc.ts";
 import {useNextSong} from "@/hooks/useNextSong.ts";
-import {useEffect} from "react";
 import {AUTO_STOP_MARGIN} from "@/constants.ts";
+import {usePropertyListener} from "@/hooks/usePropertyListener.ts";
 
 export const useAutoStop = () => {
 
@@ -11,11 +11,13 @@ export const useAutoStop = () => {
   const nextSong = useNextSong()
   const currentlyPlaying = useAtomValue(currentlyPlayingAtom)
 
-  const currentBeat = useAtomValue(currentBeatAtom)
+  const listenForStopSong = (payload: number[]) => {
+    console.log(payload)
 
-  const listenForStopSong = () => {
+    if (!currentlyPlaying) return;
     if (!selectedSong) return;
     if (!selectedSong.end) return;
+    const currentBeat = payload[0];
 
     const distance = currentBeat - selectedSong.end;
     if (distance < 0 || distance > AUTO_STOP_MARGIN) return;
@@ -32,8 +34,5 @@ export const useAutoStop = () => {
 
   }
 
-  useEffect(() => {
-    if (!currentlyPlaying) return;
-    listenForStopSong()
-  }, [currentBeat]);
+  usePropertyListener(null, "/live/song/get/beat", listenForStopSong)
 }
