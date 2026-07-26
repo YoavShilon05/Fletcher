@@ -1,4 +1,5 @@
 import { loadWebMscore } from './loader';
+import { normalizeMscz } from './normalize-mscz';
 import { stripExcerpts } from './strip-excerpts';
 import type { WebMscoreInstance, WebMscoreStatic } from './types';
 import { FULL_SCORE_PART_ID, type BakeResult, type BakedPartData } from '@/interfaces/baked-chart';
@@ -102,12 +103,17 @@ async function bakeInstrumentParts(
 export async function bakeMscz(msczBytes: Uint8Array): Promise<BakeResult> {
   const WebMscore = await loadWebMscore();
 
-  // WebMscore.load transfers the array's buffer to its worker, neutering
-  // msczBytes here. Keep a pristine copy for the excerpt-strip pass (which reads
-  // the raw zip), taken before the load consumes the original.
-  const msczForParts = msczBytes.slice();
+  // Rewrite MuseScore 4.4+ key signatures into the MS3 `<accidental>` form the
+  // webmscore engine can read; otherwise key sigs vanish and every altered note
+  // shows an explicit accidental. Everything downstream works off this copy.
+  const normalized = normalizeMscz(msczBytes);
 
-  const score = await WebMscore.load('mscz', msczBytes, [], true);
+  // WebMscore.load transfers the array's buffer to its worker, neutering the
+  // array here. Keep a pristine copy for the excerpt-strip pass (which reads the
+  // raw zip), taken before the load consumes the normalized bytes.
+  const msczForParts = normalized.slice();
+
+  const score = await WebMscore.load('mscz', normalized, [], true);
 
   try {
     const meta = await score.metadata();

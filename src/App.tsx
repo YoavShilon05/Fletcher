@@ -1,4 +1,4 @@
-import {ReactNode, useEffect, useMemo, useState} from "react";
+import {ReactNode, useEffect, useMemo} from "react";
 import "./App.css";
 import {SongSelector} from "@/components/SongSelector/SongSelector.tsx";
 import {SongStructure} from "@/components/SongStructure/SongStructure.tsx";
@@ -10,7 +10,7 @@ import {useSceneSelection} from "@/hooks/useSceneSelection.ts";
 import {useAtom, useAtomValue, useSetAtom} from "jotai";
 import {
   currentBeatAtom,
-  currentlyPlayingAtom, delayFromMothershipAtom,
+  currentlyPlayingAtom, currentViewAtom, delayFromMothershipAtom,
   fullscreenAtom,
   selectedSongAtom
 } from "@/stores/store.ts";
@@ -43,7 +43,7 @@ function App() {
   const setCurrentBeat = useSetAtom(currentBeatAtom);
   const setDelayFromMothership = useSetAtom(delayFromMothershipAtom);
   const fullscreen = useAtomValue(fullscreenAtom)
-  const [currentView, setCurrentView] = useState<ViewType>('Title');
+  const [currentView, setCurrentView] = useAtom(currentViewAtom);
 
   usePropertyListener("/live/song/start_listen/is_playing", "/live/song/get/is_playing", (payload: boolean[]) => {
     const playing = payload[0];

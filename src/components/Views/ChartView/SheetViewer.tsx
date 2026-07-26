@@ -11,7 +11,17 @@ interface Props {
   activeMeasure?: number;
   /** Zoom multiplier on top of fit-to-width. 1 = pages fill the container width. */
   zoom?: number;
+  /** When true, auto-scroll to keep the active measure's system in view. */
+  follow?: boolean;
 }
+
+// Where the active system's top sits in the viewport, as a fraction of its
+// height. Keeping it high (upper ~third) leaves the rest of the screen showing
+// the measures you're about to play, instead of chasing the bottom edge.
+const FOLLOW_TOP_FRACTION = 0.28;
+// Don't re-scroll for sub-threshold moves — avoids fighting manual scrolling and
+// needless smooth-scroll churn while stepping through one system.
+const FOLLOW_EPSILON = 4;
 
 interface MeasureRect {
   x: number;
@@ -44,9 +54,8 @@ function measureRectFor(
   };
 }
 
-export function SheetViewer({ pages, positions, activeMeasure, zoom = 1 }: Props) {
+export function SheetViewer({ pages, positions, activeMeasure, zoom = 1, follow = true }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const highlightRef = useRef<HTMLDivElement>(null);
 
   // Width available for the sheet, tracked so pages fit-to-width responsively.
   const [containerWidth, setContainerWidth] = useState(0);
@@ -100,13 +109,38 @@ export function SheetViewer({ pages, positions, activeMeasure, zoom = 1 }: Props
   const highlightRect =
     activeMeasure != null ? measureRectFor(positions, activeMeasure, scale) : null;
 
-  // Auto-scroll the active measure into view only when it's off-screen.
+  // Follow the playing measure: scroll so its *system* sits near the top of the
+  // viewport, revealing the upcoming systems below (read-ahead, never blind).
+  // The vertical target is derived from the row's Y, so stepping through
+  // measures within the same system doesn't move it — no jitter, and same-row
+  // jumps (common when zoomed in or on a narrow phone) don't trigger a scroll.
   useEffect(() => {
-    if (highlightRect && highlightRef.current) {
-      highlightRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+    if (!follow || !highlightRect) return;
+    const viewport = scrollRef.current;
+    if (!viewport) return;
+
+    const targetTop = highlightRect.y - viewport.clientHeight * FOLLOW_TOP_FRACTION;
+    const maxTop = viewport.scrollHeight - viewport.clientHeight;
+    const clampedTop = Math.max(0, Math.min(targetTop, maxTop));
+
+    // Horizontal only matters past fit-to-width (zoomed in). Keep the measure
+    // on screen with room to its right so the rest of the bar/system shows.
+    const viewLeft = viewport.scrollLeft;
+    let targetLeft = viewLeft;
+    if (highlightRect.x < viewLeft || highlightRect.x + highlightRect.w > viewLeft + viewport.clientWidth) {
+      targetLeft = highlightRect.x - viewport.clientWidth * 0.25;
     }
-    // Depend on the measure/position, not the object identity.
-  }, [highlightRect?.x, highlightRect?.y]);
+    const maxLeft = viewport.scrollWidth - viewport.clientWidth;
+    const clampedLeft = Math.max(0, Math.min(targetLeft, maxLeft));
+
+    if (
+      Math.abs(clampedTop - viewport.scrollTop) > FOLLOW_EPSILON ||
+      Math.abs(clampedLeft - viewLeft) > FOLLOW_EPSILON
+    ) {
+      viewport.scrollTo({ top: clampedTop, left: clampedLeft, behavior: 'smooth' });
+    }
+    // Re-evaluate when the measure or the layout scale changes.
+  }, [follow, highlightRect?.x, highlightRect?.y, highlightRect?.w]);
 
   return (
     // The absolute wrapper pins the scroll box to the parent slot's size, so wide/
@@ -119,7 +153,6 @@ export function SheetViewer({ pages, positions, activeMeasure, zoom = 1 }: Props
 
           {highlightRect && (
             <div
-              ref={highlightRef}
               className="pointer-events-none absolute rounded-sm transition-all duration-200 ease-out"
               style={{
                 left: highlightRect.x,

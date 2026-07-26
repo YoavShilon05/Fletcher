@@ -22,7 +22,7 @@ async function sha256Hex(bytes: Uint8Array): Promise<string> {
 
 // Bump whenever the bake output shape or logic changes, so previously-cached
 // bakes (keyed only by source bytes) are invalidated and regenerated.
-const BAKE_VERSION = 14;
+const BAKE_VERSION = 15;
 
 /** Stable per-source key: sanitized name + short content hash + bake version. */
 export async function computeSongKey(songName: string, msczBytes: Uint8Array): Promise<string> {

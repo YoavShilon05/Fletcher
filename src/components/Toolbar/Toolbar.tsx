@@ -1,8 +1,11 @@
-import {Maximize2, Mic, Magnet, Sun, QrCode, ListMusic} from "lucide-react";
-import {useAtomValue, useSetAtom} from "jotai";
+import {Maximize2, Mic, Magnet, Sun, QrCode, ListMusic, ZoomIn, ZoomOut, LocateFixed} from "lucide-react";
+import {useAtom, useAtomValue, useSetAtom} from "jotai";
 import {
+  chartZoomAtom,
+  currentViewAtom,
   fletcherControlTrackIndexAtom,
   fletcherCountTrackIndexAtom,
+  followMeasureAtom,
   fullscreenAtom,
   lightScreenAtom,
   shotCallingAtom,
@@ -25,6 +28,15 @@ export const Toolbar = () => {
   const countTrackIndex = useAtomValue(fletcherCountTrackIndexAtom)
   const controlTrackIndex = useAtomValue(fletcherControlTrackIndexAtom)
   const fletcherTracksExist = countTrackIndex !== -1 && controlTrackIndex !== -1
+
+  // Zoom + follow only apply to the score views.
+  const currentView = useAtomValue(currentViewAtom)
+  const showChartTools = currentView === 'Chart' || currentView === 'Chords'
+  const [zoom, setZoom] = useAtom(chartZoomAtom)
+  const [follow, setFollow] = useAtom(followMeasureAtom)
+  // Geometric steps feel even across the range; clamp to sane bounds.
+  const zoomBy = (factor: number) =>
+    setZoom((z) => Math.min(3, Math.max(0.5, Math.round(z * factor * 100) / 100)))
 
   return (
     <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20 flex items-start gap-3 select-none w-full p-5">
@@ -63,6 +75,41 @@ export const Toolbar = () => {
       >
         <ListMusic />
       </Toggle>
+
+      {/* Chart/Chords-only: zoom out / in and the jump-to-playing-measure toggle */}
+      {showChartTools && (
+        <>
+          <Button
+            onClick={() => zoomBy(1 / 1.2)}
+            disabled={zoom <= 0.5}
+            variant="outline" size="lg"
+            title="Zoom out"
+            className="text-muted-foreground hover:text-foreground hover:bg-transparent cursor-pointer"
+          >
+            <ZoomOut />
+          </Button>
+
+          <Button
+            onClick={() => zoomBy(1.2)}
+            disabled={zoom >= 3}
+            variant="outline" size="lg"
+            title="Zoom in"
+            className="text-muted-foreground hover:text-foreground hover:bg-transparent cursor-pointer"
+          >
+            <ZoomIn />
+          </Button>
+
+          <Toggle
+            pressed={follow}
+            onPressedChange={setFollow}
+            variant="outline" size="lg"
+            title={follow ? "Jump to playing measure: on" : "Jump to playing measure: off"}
+            className="text-muted-foreground hover:text-foreground hover:bg-transparent cursor-pointer"
+          >
+            <LocateFixed />
+          </Toggle>
+        </>
+      )}
 
       <QRModal open={showQr} onOpenChange={setShowQr} />
     </div>

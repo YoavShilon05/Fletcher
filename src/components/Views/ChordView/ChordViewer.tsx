@@ -12,24 +12,42 @@ interface Props {
   /** 0-indexed, matches OSMD's MeasureList indexing (same convention as SheetViewer) */
   activeMeasure?: number;
   zoom?: number;
+  /** When true, auto-scroll to keep the active measure's row in view. */
+  follow?: boolean;
 }
 
-export function ChordViewer({ content, activeMeasure, zoom = 1.0 }: Props) {
+// Anchor the active row near the top so the next rows of the grid stay visible.
+const FOLLOW_TOP_FRACTION = 0.28;
+const FOLLOW_EPSILON = 4;
+
+export function ChordViewer({ content, activeMeasure, zoom = 1.0, follow = true }: Props) {
   const measures = useMemo<MeasureChords[]>(
     () => (content ? parseChordsFromMusicXml(content) : []),
     [content],
   );
 
-  // Keep the active measure in view as the song plays, without re-rendering the grid.
+  // Keep the active measure in view as the song plays, without re-rendering the
+  // grid. Anchor its row near the top (read-ahead) rather than nudging it just
+  // barely on-screen; cells sharing a grid row share a top, so stepping across a
+  // row doesn't scroll.
+  const viewportRef = useRef<HTMLDivElement>(null);
   const cellRefs = useRef<(HTMLDivElement | null)[]>([]);
   useEffect(() => {
-    if (activeMeasure == null) return;
-    cellRefs.current[activeMeasure]?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'nearest',
-      inline: 'center',
-    });
-  }, [activeMeasure]);
+    if (!follow || activeMeasure == null) return;
+    const viewport = viewportRef.current;
+    const cell = cellRefs.current[activeMeasure];
+    if (!viewport || !cell) return;
+
+    const cellTopInContent =
+      cell.getBoundingClientRect().top - viewport.getBoundingClientRect().top + viewport.scrollTop;
+    const targetTop = cellTopInContent - viewport.clientHeight * FOLLOW_TOP_FRACTION;
+    const maxTop = viewport.scrollHeight - viewport.clientHeight;
+    const clampedTop = Math.max(0, Math.min(targetTop, maxTop));
+
+    if (Math.abs(clampedTop - viewport.scrollTop) > FOLLOW_EPSILON) {
+      viewport.scrollTo({ top: clampedTop, behavior: 'smooth' });
+    }
+  }, [follow, activeMeasure]);
 
   if (!content) return null;
 
@@ -47,7 +65,7 @@ export function ChordViewer({ content, activeMeasure, zoom = 1.0 }: Props) {
   const qualitySize = 0.85 * zoom;
 
   return (
-    <ScrollArea className="w-full h-full bg-white">
+    <ScrollArea className="w-full h-full bg-white" viewportRef={viewportRef}>
       <div
         className="grid gap-2 p-4"
         style={{ gridTemplateColumns: `repeat(auto-fill, minmax(${cellSize}px, 1fr))` }}

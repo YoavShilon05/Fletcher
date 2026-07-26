@@ -1,15 +1,16 @@
-import { currentBeatAtom, selectedPartIdAtom, selectedSongAtom } from '@/stores/store.ts';
+import {
+  chartZoomAtom,
+  currentBeatAtom,
+  followMeasureAtom,
+  selectedPartIdAtom,
+  selectedSongAtom,
+} from '@/stores/store.ts';
 import { useAtom, useAtomValue } from 'jotai';
 import { calculateMeasure } from '@/utils/calc-current-measure.ts';
 import { useBakedChart, useChartPart } from '@/hooks/useBakedChart.ts';
 import { SheetViewer } from '@/components/Views/ChartView/SheetViewer.tsx';
 import { FULL_SCORE_PART_ID, type BakedPart } from '@/interfaces/baked-chart.ts';
 import { useMemo } from 'react';
-
-interface ChartViewProps {
-  /** Zoom multiplier on top of fit-to-width (1 = pages fill the width). */
-  zoom?: number;
-}
 
 function Centered({ children }: { children: React.ReactNode }) {
   return (
@@ -49,10 +50,12 @@ function PartSelector({
   );
 }
 
-export const ChartView = ({ zoom = 1 }: ChartViewProps) => {
+export const ChartView = () => {
   const beat = useAtomValue(currentBeatAtom);
   const song = useAtomValue(selectedSongAtom);
   const [partId, setPartId] = useAtom(selectedPartIdAtom);
+  const zoom = useAtomValue(chartZoomAtom);
+  const follow = useAtomValue(followMeasureAtom);
 
   const chartState = useBakedChart(song);
   const chart = chartState.status === 'ready' ? chartState.chart : undefined;
@@ -85,6 +88,7 @@ export const ChartView = ({ zoom = 1 }: ChartViewProps) => {
             positions={partData.positions}
             activeMeasure={Math.floor(calculateMeasure(beat, song))}
             zoom={zoom}
+            follow={follow}
           />
         ) : (
           <Centered>Preparing chart…</Centered>
