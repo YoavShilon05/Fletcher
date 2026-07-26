@@ -39,7 +39,7 @@ export const Toolbar = () => {
     setZoom((z) => Math.min(3, Math.max(0.5, Math.round(z * factor * 100) / 100)))
 
   return (
-    <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20 flex items-start gap-3 select-none w-full p-5">
+    <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20 flex flex-wrap items-start justify-center gap-2 sm:gap-3 select-none w-full p-3 sm:p-5">
       {/* Full screen */}
       <Toggle onPressedChange={setFullscreen} variant="outline" size="lg" className="text-muted-foreground hover:text-foreground hover:bg-transparent cursor-pointer">
         <Maximize2 />
