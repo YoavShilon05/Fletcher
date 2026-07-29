@@ -46,3 +46,9 @@ export const chartZoomAtom = atomWithStorage<number>("fletcher.chartZoom", 1)
 // When on, Chart/Chords auto-scroll to keep the playing measure in view (ahead
 // of time, so the next systems stay visible). Persisted per device.
 export const followMeasureAtom = atomWithStorage<boolean>("fletcher.followMeasure", true)
+
+// Measured height of the floating toolbar. It's absolutely positioned over the
+// view canvas, and on a narrow screen (phone) it wraps onto several rows — so
+// the views below have to reserve exactly this much room or the toolbar covers
+// (and swallows clicks on) their top controls.
+export const toolbarHeightAtom = atom<number>(0)

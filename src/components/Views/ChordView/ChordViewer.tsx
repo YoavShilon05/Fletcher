@@ -2,9 +2,11 @@
 // MusicXML (see extract-chords.ts), not from note analysis. Same props as
 // SheetViewer (content / activeMeasure / zoom).
 
-import { useEffect, useMemo, useRef } from 'react';
+import { useMemo, useRef } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { Centered } from '@/components/Views/ScoreView.tsx';
+import { useFollowScroll } from '@/hooks/useFollowScroll.ts';
 import { parseChordsFromMusicXml, type MeasureChords } from '@/utils/extract-chords';
 
 interface Props {
@@ -15,10 +17,6 @@ interface Props {
   /** When true, auto-scroll to keep the active measure's row in view. */
   follow?: boolean;
 }
-
-// Anchor the active row near the top so the next rows of the grid stay visible.
-const FOLLOW_TOP_FRACTION = 0.28;
-const FOLLOW_EPSILON = 4;
 
 export function ChordViewer({ content, activeMeasure, zoom = 1.0, follow = true }: Props) {
   const measures = useMemo<MeasureChords[]>(
@@ -32,33 +30,21 @@ export function ChordViewer({ content, activeMeasure, zoom = 1.0, follow = true 
   // row doesn't scroll.
   const viewportRef = useRef<HTMLDivElement>(null);
   const cellRefs = useRef<(HTMLDivElement | null)[]>([]);
-  useEffect(() => {
-    if (!follow || activeMeasure == null) return;
+  useFollowScroll(viewportRef, follow, [activeMeasure], () => {
     const viewport = viewportRef.current;
-    const cell = cellRefs.current[activeMeasure];
-    if (!viewport || !cell) return;
+    const cell = activeMeasure == null ? null : cellRefs.current[activeMeasure];
+    if (!viewport || !cell) return null;
 
-    const cellTopInContent =
-      cell.getBoundingClientRect().top - viewport.getBoundingClientRect().top + viewport.scrollTop;
-    const targetTop = cellTopInContent - viewport.clientHeight * FOLLOW_TOP_FRACTION;
-    const maxTop = viewport.scrollHeight - viewport.clientHeight;
-    const clampedTop = Math.max(0, Math.min(targetTop, maxTop));
-
-    if (Math.abs(clampedTop - viewport.scrollTop) > FOLLOW_EPSILON) {
-      viewport.scrollTo({ top: clampedTop, behavior: 'smooth' });
-    }
-  }, [follow, activeMeasure]);
+    // The grid never scrolls sideways (cells reflow), so only Y is needed.
+    return {
+      y: cell.getBoundingClientRect().top - viewport.getBoundingClientRect().top + viewport.scrollTop,
+    };
+  });
 
   if (!content) return null;
 
   const hasChords = measures.some((m) => m.chords.length > 0);
-  if (!hasChords) {
-    return (
-      <div className="w-full h-full bg-white flex items-center justify-center">
-        <p className="text-gray-500">No chord symbols found in this chart.</p>
-      </div>
-    );
-  }
+  if (!hasChords) return <Centered>No chord symbols found in this chart.</Centered>;
 
   const cellSize = 110 * zoom;
   const rootSize = 1.5 * zoom;

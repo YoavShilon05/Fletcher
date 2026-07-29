@@ -25,6 +25,11 @@ function ScrollArea({
         {children}
       </ScrollAreaPrimitive.Viewport>
       <ScrollBar />
+      {/* Radix only enables `overflow-x` on the viewport when a horizontal
+          scrollbar is mounted — without this, content wider than the box (a
+          zoomed-in chart) is simply unreachable. It stays hidden when the
+          content fits. */}
+      <ScrollBar orientation="horizontal" />
       <ScrollAreaPrimitive.Corner />
     </ScrollAreaPrimitive.Root>
   )
