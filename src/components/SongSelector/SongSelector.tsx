@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
-import { SongCard } from './SongCard';
+import { SongRow } from './SongRow';
 import {useAtom, useAtomValue, useSetAtom} from "jotai";
 import {currentSectionAtom, selectedSongAtom, setlistAtom} from "@/stores/store.ts";
 import { sendOsc } from "@/hooks/useOsc.ts";
@@ -117,13 +117,13 @@ export const SongSelector = () => {
     const track = trackRef.current;
     if (!track) return;
 
-    const cards = track.querySelectorAll('.song-card-wrapper');
-    const activeCard = cards[localIndex] as HTMLElement;
+    const rows = track.querySelectorAll('[data-slot="song-row"]');
+    const activeRow = rows[localIndex] as HTMLElement;
 
-    if (activeCard) {
+    if (activeRow) {
       const trackCenter = track.offsetHeight / 2;
-      const cardCenter = activeCard.offsetHeight / 2;
-      const targetTop = activeCard.offsetTop - trackCenter + cardCenter;
+      const rowCenter = activeRow.offsetHeight / 2;
+      const targetTop = activeRow.offsetTop - trackCenter + rowCenter;
 
       track.scrollTo({ top: targetTop, behavior: 'smooth' });
     }
@@ -154,27 +154,16 @@ export const SongSelector = () => {
           const status = isSelected ? 'selected' : diff === 1 ? 'adjacent' : 'default';
 
           return (
-            <div
+            <SongRow
               key={`${song.name}-${idx}`}
-              className="song-card-wrapper relative flex items-center justify-center shrink-0 w-full max-w-[280px] py-1 transition-all duration-300"
-            >
-              {isSelected && (
-                <>
-                  <div className="absolute top-0 left-0 right-0 h-[1px] bg-primary/25 z-10" />
-                  <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-primary/25 z-10" />
-                </>
-              )}
-
-              <SongCard
-                song={song}
-                status={status}
-                onClick={() => {
-                  setLocalIndex(idx);
-                  localIndexRef.current = idx;
-                  commitSelection(idx);
-                }}
-              />
-            </div>
+              song={song}
+              status={status}
+              onClick={() => {
+                setLocalIndex(idx);
+                localIndexRef.current = idx;
+                commitSelection(idx);
+              }}
+            />
           );
         })}
       </div>
