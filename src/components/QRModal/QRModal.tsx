@@ -9,10 +9,19 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { AlertCircle } from "lucide-react";
+import { isTauri } from "@/hooks/useOsc.ts";
 
-async function getBandServerAddress(): Promise<string | undefined> {
+/** The URL other devices should open to join this session. */
+async function getJoinUrl(): Promise<string | undefined> {
+  // Followers are *already* being served by the band server, so the page's own
+  // origin is exactly the address to share — and `invoke` doesn't exist here,
+  // which is why the modal used to come up empty on a phone.
+  if (!isTauri) return window.location.origin;
+
   try {
-    return await invoke<string>("get_band_server_address");
+    // Host: the local IP the server is reachable at, which the window's own
+    // (tauri://) origin can't tell us.
+    return `http://${await invoke<string>("get_band_server_address")}`;
   } catch (e) {
     console.error("Failed to get band server address:", e);
   }
@@ -24,19 +33,17 @@ interface QRModalProps {
 }
 
 export const QRModal = ({ open, onOpenChange }: QRModalProps) => {
-  const [code, setCode] = useState<string | undefined>();
+  const [url, setUrl] = useState<string | undefined>();
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!open) return;
 
     setLoading(true);
-    getBandServerAddress()
-      .then(setCode)
+    getJoinUrl()
+      .then(setUrl)
       .finally(() => setLoading(false));
   }, [open]);
-
-  const url = code ? `http://${code}` : undefined;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

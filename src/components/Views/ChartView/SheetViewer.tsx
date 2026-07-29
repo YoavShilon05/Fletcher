@@ -1,5 +1,6 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useFollowScroll } from '@/hooks/useFollowScroll.ts';
 import type { Positions } from '@/lib/webmscore/types';
 
 interface Props {
@@ -14,14 +15,6 @@ interface Props {
   /** When true, auto-scroll to keep the active measure's system in view. */
   follow?: boolean;
 }
-
-// Where the active system's top sits in the viewport, as a fraction of its
-// height. Keeping it high (upper ~third) leaves the rest of the screen showing
-// the measures you're about to play, instead of chasing the bottom edge.
-const FOLLOW_TOP_FRACTION = 0.28;
-// Don't re-scroll for sub-threshold moves — avoids fighting manual scrolling and
-// needless smooth-scroll churn while stepping through one system.
-const FOLLOW_EPSILON = 4;
 
 interface MeasureRect {
   x: number;
@@ -114,59 +107,33 @@ export function SheetViewer({ pages, positions, activeMeasure, zoom = 1, follow 
   // The vertical target is derived from the row's Y, so stepping through
   // measures within the same system doesn't move it — no jitter, and same-row
   // jumps (common when zoomed in or on a narrow phone) don't trigger a scroll.
-  useEffect(() => {
-    if (!follow || !highlightRect) return;
-    const viewport = scrollRef.current;
-    if (!viewport) return;
-
-    const targetTop = highlightRect.y - viewport.clientHeight * FOLLOW_TOP_FRACTION;
-    const maxTop = viewport.scrollHeight - viewport.clientHeight;
-    const clampedTop = Math.max(0, Math.min(targetTop, maxTop));
-
-    // Horizontal only matters past fit-to-width (zoomed in). Keep the measure
-    // on screen with room to its right so the rest of the bar/system shows.
-    const viewLeft = viewport.scrollLeft;
-    let targetLeft = viewLeft;
-    if (highlightRect.x < viewLeft || highlightRect.x + highlightRect.w > viewLeft + viewport.clientWidth) {
-      targetLeft = highlightRect.x - viewport.clientWidth * 0.25;
-    }
-    const maxLeft = viewport.scrollWidth - viewport.clientWidth;
-    const clampedLeft = Math.max(0, Math.min(targetLeft, maxLeft));
-
-    if (
-      Math.abs(clampedTop - viewport.scrollTop) > FOLLOW_EPSILON ||
-      Math.abs(clampedLeft - viewLeft) > FOLLOW_EPSILON
-    ) {
-      viewport.scrollTo({ top: clampedTop, left: clampedLeft, behavior: 'smooth' });
-    }
-    // Re-evaluate when the measure or the layout scale changes.
-  }, [follow, highlightRect?.x, highlightRect?.y, highlightRect?.w]);
+  useFollowScroll(
+    scrollRef,
+    follow,
+    [highlightRect?.x, highlightRect?.y, highlightRect?.w],
+    () => highlightRect,
+  );
 
   return (
-    // The absolute wrapper pins the scroll box to the parent slot's size, so wide/
-    // tall sheet content scrolls *inside* here instead of stretching the page. The
-    // parent (ChartView) must be `relative` with a bounded height.
-    <div className="absolute inset-0">
-      <ScrollArea className="h-full w-full" viewportRef={scrollRef}>
-        <div className="relative block" style={{ width: scaledPageWidth }}>
-          {pageNodes}
+    <ScrollArea className="h-full w-full" viewportRef={scrollRef}>
+      <div className="relative block" style={{ width: scaledPageWidth }}>
+        {pageNodes}
 
-          {highlightRect && (
-            <div
-              className="pointer-events-none absolute rounded-sm transition-all duration-200 ease-out"
-              style={{
-                left: highlightRect.x,
-                top: highlightRect.y,
-                width: highlightRect.w,
-                height: highlightRect.h,
-                backgroundColor: 'rgba(250, 204, 21, 0.25)', // yellow-400/25
-                outline: '2px solid rgba(250, 204, 21, 0.7)',
-                boxShadow: '0 0 14px rgba(250, 204, 21, 0.35)',
-              }}
-            />
-          )}
-        </div>
-      </ScrollArea>
-    </div>
+        {highlightRect && (
+          <div
+            className="pointer-events-none absolute rounded-sm transition-all duration-200 ease-out"
+            style={{
+              left: highlightRect.x,
+              top: highlightRect.y,
+              width: highlightRect.w,
+              height: highlightRect.h,
+              backgroundColor: 'rgba(250, 204, 21, 0.25)', // yellow-400/25
+              outline: '2px solid rgba(250, 204, 21, 0.7)',
+              boxShadow: '0 0 14px rgba(250, 204, 21, 0.35)',
+            }}
+          />
+        )}
+      </div>
+    </ScrollArea>
   );
 }
