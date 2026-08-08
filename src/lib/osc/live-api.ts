@@ -1,6 +1,7 @@
 // Typed wrappers for every command the host sends. Each returns the
 // underlying invoke promise; await it when ordering matters (see clips.ts).
 
+import type { TempoChangeEvent } from "@/types/tempo";
 import type { TimeSignatureChangeEvent } from "@/types/time-signature";
 import { BROADCAST, LIVE_INITIAL_QUERIES, LIVE_LISTEN_ADDRESSES } from "./addresses";
 import { broadcast, sendOsc } from "./transport";
@@ -17,6 +18,11 @@ export const live = {
   stopAllClips: () => sendOsc("/live/song/stop_all_clips"),
   backToArranger: () => sendOsc("/live/song/set/back_to_arranger", [0]),
   setTempo: (bpm: number) => sendOsc("/live/song/set/tempo", [bpm]),
+  /**
+   * Hand every overridden parameter back to its automation — the LOM behind
+   * Live's Re-Enable Automation button. Set-wide, not just the tempo.
+   */
+  reEnableAutomation: () => sendOsc("/live/song/re_enable_automation"),
   setLoopStart: (beat: number) => sendOsc("/live/song/set/loop_start", [beat]),
   setLoopLength: (beats: number) => sendOsc("/live/song/set/loop_length", [beats]),
 
@@ -41,6 +47,11 @@ export const live = {
 
 export const band = {
   heartbeat: (sentAt: number) => broadcast(BROADCAST.heartbeat.address, [sentAt]),
+  tempoEvents: (events: TempoChangeEvent[]) =>
+    broadcast(
+      BROADCAST.tempoEvents.address,
+      events.flatMap(({ time, tempo }) => [time, tempo]),
+    ),
   timeSignatureEvents: (events: TimeSignatureChangeEvent[]) =>
     broadcast(
       BROADCAST.timeSignatureEvents.address,

@@ -439,11 +439,16 @@ class SongHandler(AbletonOSCHandler):
                 self.logger.info("Removing playback_start listener")
             except:
                 pass
+            try:
+                self.song.remove_tempo_listener(self.playback_tempo_changed)
+            except:
+                pass
 
         def start_playback_start_listener(params: Tuple[Any] = ()):
             stop_playback_start_listener()
             self.logger.info("Adding playback_start listener")
             self.song.add_is_playing_listener(self.playback_started_changed)
+            self.song.add_tempo_listener(self.playback_tempo_changed)
 
         self.main_stop_playback_start_listener = stop_playback_start_listener
         self.osc_server.add_handler("/live/song/start_listen/playback_start", start_playback_start_listener)
@@ -473,25 +478,41 @@ class SongHandler(AbletonOSCHandler):
         names = tuple(track.name for track in self.song.tracks)
         self.osc_server.send("/live/song/get/track_names", names)
 
+    def send_playback_start(self):
+        """
+        Stamp this moment with a Unix timestamp alongside the beat position and
+        tempo at that instant, so clients can extrapolate beat position without
+        polling. Timed here rather than on arrival, so network delay doesn't
+        enter the clients' maths.
+        """
+        now = time.time()
+        # OSC floats ('f') are 32-bit and lose precision at this magnitude
+        # (a Unix timestamp only has ~128s resolution as a float32). Split
+        # into two ints instead, which carry full integer precision.
+        unix_seconds = int(now)
+        unix_millis = int(round((now - unix_seconds) * 1000))
+        self.osc_server.send(
+            "/live/song/get/playback_start",
+            (unix_seconds, unix_millis, self.song.current_song_time, self.song.tempo)
+        )
+
     def playback_started_changed(self):
         """
         Fires on every is_playing transition. When playback starts (including
-        resuming from a pause, or starting mid-song via a cue/jump), stamps the
-        moment with a Unix timestamp alongside the beat position and tempo at
-        that instant, so clients can extrapolate beat position without polling.
+        resuming from a pause, or starting mid-song via a cue/jump), re-stamp
+        the anchor.
         """
-        is_playing = self.song.is_playing
-        if is_playing:
-            now = time.time()
-            # OSC floats ('f') are 32-bit and lose precision at this magnitude
-            # (a Unix timestamp only has ~128s resolution as a float32). Split
-            # into two ints instead, which carry full integer precision.
-            unix_seconds = int(now)
-            unix_millis = int(round((now - unix_seconds) * 1000))
-            self.osc_server.send(
-                "/live/song/get/playback_start",
-                (unix_seconds, unix_millis, self.song.current_song_time, self.song.tempo)
-            )
+        if self.song.is_playing:
+            self.send_playback_start()
+
+    def playback_tempo_changed(self):
+        """
+        Fires whenever the tempo moves, the arrangement's tempo envelope
+        included. Clients extrapolate from the last anchor at a fixed tempo, so
+        a tempo change invalidates it — re-stamp so they pick up the new one.
+        """
+        if self.song.is_playing:
+            self.send_playback_start()
 
     def current_song_time_changed(self):
         #--------------------------------------------------------------------------------

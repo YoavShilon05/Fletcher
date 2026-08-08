@@ -4,6 +4,7 @@
 import { atom } from "jotai";
 import type { Locator, PlaybackAnchor } from "@/lib/osc/addresses";
 import type { Scene } from "@/types/scene";
+import type { TempoChangeEvent } from "@/types/tempo";
 import type { TimeSignature, TimeSignatureChangeEvent } from "@/types/time-signature";
 
 export const isPlayingAtom = atom(false);
@@ -19,6 +20,8 @@ export const trackNamesAtom = atom<string[]>([]);
 export const globalTempoAtom = atom(0);
 export const globalTimeSignatureAtom = atom<TimeSignature>({ numerator: 4, denominator: 4 });
 export const timeSignatureChangesAtom = atom<TimeSignatureChangeEvent[]>([]);
+/** The set's tempo envelope, read from the .als — Live exposes no OSC for it. */
+export const tempoChangesAtom = atom<TempoChangeEvent[]>([]);
 /** Absolute path of the open .als file (host only). */
 export const filePathAtom = atom<string>();
 

@@ -10,6 +10,7 @@ import {
   locatorsAtom,
   playbackAnchorAtom,
   scenesAtom,
+  tempoChangesAtom,
   timeSignatureChangesAtom,
   trackNamesAtom,
 } from "./atoms";
@@ -43,6 +44,7 @@ export function useLiveStateSync() {
     store.set(globalTimeSignatureAtom, (prev) => ({ ...prev, denominator })),
   );
 
+  useOscMessage(BROADCAST.tempoEvents, (events) => store.set(tempoChangesAtom, events));
   useOscMessage(BROADCAST.timeSignatureEvents, (events) =>
     store.set(timeSignatureChangesAtom, events),
   );

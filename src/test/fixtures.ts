@@ -1,3 +1,4 @@
+import type { TempoContext } from "@/features/music/tempo";
 import type { TimeSignatureContext } from "@/features/music/time-signature";
 import { SectionNames, type Song } from "@/types/song";
 
@@ -7,6 +8,13 @@ export const ctx = (overrides: Partial<TimeSignatureContext> = {}): TimeSignatur
   changes: [],
   scenes: [],
   global: FOUR_FOUR,
+  ...overrides,
+});
+
+export const tempoCtx = (overrides: Partial<TempoContext> = {}): TempoContext => ({
+  changes: [],
+  setlist: [],
+  global: 100,
   ...overrides,
 });
 

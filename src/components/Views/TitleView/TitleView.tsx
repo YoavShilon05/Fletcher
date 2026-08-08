@@ -1,10 +1,16 @@
 import { useAtomValue } from "jotai";
 import { Separator } from "@/components/ui/separator";
 import { TempoFooter } from "@/components/Views/TempoFooter";
+import { currentBeatAtom } from "@/features/live/atoms";
+import { tempoAt, tempoContextAtom } from "@/features/music/tempo";
 import { selectedSongAtom } from "@/features/setlist/atoms";
 
 export const TitleView = () => {
   const selectedSong = useAtomValue(selectedSongAtom);
+  const currentBeat = useAtomValue(currentBeatAtom);
+  const tempos = useAtomValue(tempoContextAtom);
+
+  const tempo = tempoAt(tempos, selectedSong, currentBeat);
 
   return (
     <div className="font-mono relative h-full w-full">
@@ -30,7 +36,7 @@ export const TitleView = () => {
         </div>
       </div>
 
-      {selectedSong?.tempo ? <TempoFooter tempo={selectedSong.tempo} /> : null}
+      {tempo ? <TempoFooter tempo={tempo} /> : null}
     </div>
   );
 };

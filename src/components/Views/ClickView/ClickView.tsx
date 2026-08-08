@@ -2,6 +2,7 @@ import { useAtomValue } from "jotai";
 import { TempoFooter } from "@/components/Views/TempoFooter";
 import { currentBeatAtom, isPlayingAtom } from "@/features/live/atoms";
 import { calculateMeasure } from "@/features/music/measure";
+import { tempoAt, tempoContextAtom } from "@/features/music/tempo";
 import { timeSignatureAt, timeSignatureContextAtom } from "@/features/music/time-signature";
 import { selectedSongAtom } from "@/features/setlist/atoms";
 
@@ -10,6 +11,10 @@ export const ClickView = () => {
   const isPlaying = useAtomValue(isPlayingAtom);
   const currentBeat = useAtomValue(currentBeatAtom);
   const timeSignatures = useAtomValue(timeSignatureContextAtom);
+  const tempos = useAtomValue(tempoContextAtom);
+
+  // Follows the envelope through a song that switches tempo mid-way.
+  const tempo = tempoAt(tempos, selectedSong, currentBeat);
 
   // TODO: consider non-4 denominators
   const { numerator } = timeSignatureAt(timeSignatures, selectedSong, currentBeat);
@@ -42,7 +47,7 @@ export const ClickView = () => {
         </div>
       </div>
 
-      {selectedSong?.tempo ? <TempoFooter tempo={selectedSong.tempo} /> : null}
+      {tempo ? <TempoFooter tempo={tempo} /> : null}
     </div>
   );
 };

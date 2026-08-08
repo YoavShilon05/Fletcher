@@ -2,6 +2,7 @@
 // payload decoder; outgoing commands are typed functions in `live-api.ts`.
 
 import type { Scene } from "@/types/scene";
+import type { TempoChangeEvent } from "@/types/tempo";
 import type { TimeSignatureChangeEvent } from "@/types/time-signature";
 import { asBoolean, asNumber, asString, chunk, defineMessage } from "./message";
 
@@ -96,6 +97,13 @@ export const LIVE_INITIAL_QUERIES = [
 export const BROADCAST = {
   /** Host wall-clock time, so followers can estimate their clock offset. */
   heartbeat: defineMessage("/broadcast/heartbeat", ([sentAt]) => asNumber(sentAt)),
+  /** The Live set's tempo automation, flattened to [time, bpm]*. */
+  tempoEvents: defineMessage("/broadcast/tempo_events", (args) =>
+    chunk(args, 2).map(([time, tempo]): TempoChangeEvent => ({
+      time: asNumber(time),
+      tempo: asNumber(tempo),
+    })),
+  ),
   /** The Live set's time-signature automation, flattened to [time, num, den]*. */
   timeSignatureEvents: defineMessage("/broadcast/time_signature_events", (args) =>
     chunk(args, 3).map(([time, numerator, denominator]): TimeSignatureChangeEvent => ({

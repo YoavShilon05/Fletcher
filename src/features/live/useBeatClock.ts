@@ -1,9 +1,48 @@
 import { useAtomValue, useStore } from "jotai";
 import { useEffect } from "react";
 import { PLAYBACK_LOOKAHEAD_MS } from "@/constants";
-import { currentBeatAtom, delayFromMothershipAtom, playbackAnchorAtom } from "./atoms";
+import type { PlaybackAnchor } from "@/lib/osc/addresses";
+import type { TempoChangeEvent } from "@/types/tempo";
+import {
+  currentBeatAtom,
+  delayFromMothershipAtom,
+  playbackAnchorAtom,
+  tempoChangesAtom,
+} from "./atoms";
 
 const MS_PER_MINUTE = 60_000;
+
+/**
+ * Where the playhead is `elapsedMs` after `anchor`, and the tempo it is running
+ * at there.
+ *
+ * The anchor's tempo is Live's own reading at the moment it stamped the anchor,
+ * so it holds until the envelope's next breakpoint; from there the envelope
+ * takes over, one constant-tempo segment per breakpoint. Live interpolates its
+ * tempo envelope linearly between points, so a clean switch wants two points
+ * close together — the one before it holding the old tempo — and a long ramp
+ * will read as a step at its far end.
+ */
+export function beatAfter(
+  changes: TempoChangeEvent[],
+  anchor: PlaybackAnchor,
+  elapsedMs: number,
+): { beat: number; tempo: number } {
+  let beat = anchor.startBeat;
+  let tempo = anchor.tempo;
+  let remainingMs = elapsedMs;
+
+  for (const change of changes) {
+    if (change.time <= beat) continue;
+    const msToChange = ((change.time - beat) * MS_PER_MINUTE) / tempo;
+    if (msToChange > remainingMs) break;
+    remainingMs -= msToChange;
+    beat = change.time;
+    tempo = change.tempo;
+  }
+
+  return { beat: beat + (remainingMs * tempo) / MS_PER_MINUTE, tempo };
+}
 
 /**
  * While playing, advance `currentBeatAtom` from the wall-clock playback anchor
@@ -13,11 +52,11 @@ const MS_PER_MINUTE = 60_000;
 export function useBeatClock() {
   const store = useStore();
   const anchor = useAtomValue(playbackAnchorAtom);
+  const tempoChanges = useAtomValue(tempoChangesAtom);
 
   useEffect(() => {
     if (!anchor || anchor.tempo <= 0) return;
 
-    const beatsPerMs = anchor.tempo / MS_PER_MINUTE;
     let lastBeat: number | null = null;
     let timeout: ReturnType<typeof setTimeout>;
 
@@ -29,7 +68,7 @@ export function useBeatClock() {
         anchor.startTimeMs +
         PLAYBACK_LOOKAHEAD_MS -
         store.get(delayFromMothershipAtom);
-      const beatFloat = anchor.startBeat + elapsedMs * beatsPerMs;
+      const { beat: beatFloat, tempo } = beatAfter(tempoChanges, anchor, elapsedMs);
       const beat = Math.floor(beatFloat);
 
       if (beat !== lastBeat) {
@@ -37,11 +76,13 @@ export function useBeatClock() {
         store.set(currentBeatAtom, beat);
       }
 
-      const msUntilNextBeat = (beat + 1 - beatFloat) / beatsPerMs;
+      // Every tick re-derives the position from the wall clock, so a wait that
+      // straddles a tempo change is corrected by the tick it lands on.
+      const msUntilNextBeat = ((beat + 1 - beatFloat) * MS_PER_MINUTE) / tempo;
       timeout = setTimeout(tick, Math.max(msUntilNextBeat, 1));
     };
 
     tick();
     return () => clearTimeout(timeout);
-  }, [anchor, store]);
+  }, [anchor, tempoChanges, store]);
 }
