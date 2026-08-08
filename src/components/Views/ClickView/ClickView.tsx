@@ -12,10 +12,15 @@ export const ClickView = () => {
 
   const currentBeat = useAtomValue(currentBeatAtom);
   const timeSignature = getTimeSignature(currentBeat, selectedSong);
+
+  // Measures run negative through the count-in, so wrap into [0, numerator].
+  const beatInBar = (beats: number) =>
+    ((Math.round(beats) % timeSignature.numerator) + timeSignature.numerator) % timeSignature.numerator;
+
   const activeBeat = isPlaying ? (
     selectedSong
-      ? Math.round(calculateMeasure(currentBeat, selectedSong) * timeSignature.numerator) % timeSignature.numerator
-      : currentBeat % timeSignature.numerator % timeSignature.numerator
+      ? beatInBar(calculateMeasure(currentBeat, selectedSong) * timeSignature.numerator)
+      : beatInBar(currentBeat)
     ) : null
 
   const circleCount = timeSignature.numerator

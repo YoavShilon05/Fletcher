@@ -30,8 +30,8 @@ export type ScoreViewState =
   | {
       ready: true;
       chart: BakedChart;
-      /** 0-indexed measure currently playing. */
-      activeMeasure: number;
+      /** 0-indexed measure currently playing; undefined through the count-in. */
+      activeMeasure: number | undefined;
       /** Toolbar zoom multiplier, on top of each view's own base scale. */
       zoom: number;
       follow: boolean;
@@ -58,10 +58,14 @@ export function useScoreView(song: Song | undefined): ScoreViewState {
   if (chartState.status !== 'ready')
     return { ready: false, placeholder: <Centered>Preparing chart…</Centered> };
 
+  // Measures run negative through the count-in — nothing to highlight until the
+  // chart starts.
+  const measure = Math.floor(calculateMeasure(beat, song));
+
   return {
     ready: true,
     chart: chartState.chart,
-    activeMeasure: Math.floor(calculateMeasure(beat, song)),
+    activeMeasure: measure >= 0 ? measure : undefined,
     zoom,
     follow,
   };

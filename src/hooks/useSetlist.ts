@@ -48,10 +48,7 @@ export const useSetlist = () => {
           name: locator.name,
           timelineLocation: locator.location,
           tempo: getTempo(locator.name),
-          structure: [{
-            name: SectionNames.INTRO,
-            timelineLocation: locator.location
-          }],
+          structure: [],
           extraCalls: [],
           key: "Am"
         })
