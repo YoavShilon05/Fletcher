@@ -10,7 +10,7 @@ export const ctx = (overrides: Partial<TimeSignatureContext> = {}): TimeSignatur
   ...overrides,
 });
 
-/** A song at beat 100 with a 4-beat count-in, sections at 104 / 136 / 168, ending at 200. */
+/** A song at beat 100 with sections at 104 / 136 / 168, ending at 200, and no START. */
 export const song = (overrides: Partial<Song> = {}): Song => ({
   name: "Song A",
   tempo: 120,

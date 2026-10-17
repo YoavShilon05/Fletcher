@@ -1,3 +1,9 @@
+/**
+ * Optional locator that marks where the preceding song's chart starts (its
+ * bar 1) — anything between the song locator and it is count-in. Without one,
+ * the chart starts at the song locator itself.
+ */
+export const START_SONG = "START";
 /** Locator name that marks where the preceding song ends. */
 export const STOP_SONG = "STOP";
 
@@ -46,5 +52,7 @@ export interface Song {
   structure: SongSection[];
   extraCalls: ExtraCall[];
   timelineLocation: number;
+  /** Where the chart starts playing (START locator). Everything before it is count-in. */
+  start?: number;
   end?: number;
 }

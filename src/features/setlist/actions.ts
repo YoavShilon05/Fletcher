@@ -17,6 +17,17 @@ export const selectSongAtom = atom(null, (_get, set, song: Song) => {
   cueTo(song.timelineLocation);
 });
 
+/**
+ * Cue Live to a point of the selected song that isn't a section start (its
+ * song locator, or its START). Ignored mid-playback.
+ */
+export const selectLocationAtom = atom(null, (get, set, beat: number) => {
+  if (get(isPlayingAtom)) return;
+  // Let the section follow the playhead to wherever the point sits.
+  set(currentSectionAtom, undefined);
+  cueTo(beat);
+});
+
 /** Select a section from the UI and cue Live to it. Ignored mid-playback. */
 export const selectSectionAtom = atom(null, (get, set, section: SongSection) => {
   if (get(isPlayingAtom)) return;

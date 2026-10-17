@@ -46,6 +46,8 @@ describe("App", () => {
       ws.push("/live/song/get/cue_points", [
         'String("Opener")',
         "Float(0.0)",
+        'String("START")',
+        "Float(2.0)",
         'String("INTRO")',
         "Float(4.0)",
         'String("VERSE")',
@@ -59,11 +61,18 @@ describe("App", () => {
     expect(el.querySelector("h1")?.textContent).toBe("Opener");
     expect(el.textContent).toContain("Closer");
     expect(el.textContent).toContain("120 BPM");
+    // Both start points get their own timeline rows (neither sits on a section):
+    // the song marker (playback start) and START (chart start).
+    expect(el.querySelector("aside")?.textContent).toContain("Playback");
+    expect(el.querySelector("aside")?.textContent).toContain("Chart");
 
     // Playhead moves into the second song -> selection follows.
     await act(async () => ws.push("/live/song/get/beat", ["Int(101)"]));
     expect(el.querySelector("h1")?.textContent).toBe("Closer");
     expect(el.textContent).toContain("Final Song");
+    // Closer has no START: only the playback start point.
+    expect(el.querySelector("aside")?.textContent).toContain("Playback");
+    expect(el.querySelector("aside")?.textContent).not.toContain("Chart");
 
     // Back to the verse of the first song -> section follows.
     await act(async () => ws.push("/live/song/get/beat", ["Int(25)"]));

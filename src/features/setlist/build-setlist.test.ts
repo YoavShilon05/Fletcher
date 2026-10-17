@@ -37,6 +37,17 @@ describe("buildSetlist", () => {
     expect(setlist[0].end).toBeUndefined();
   });
 
+  it("records a START locator as the song's chart start", () => {
+    const [a, b] = buildSetlist(
+      [loc("Song A", 0), loc("START", 8), loc("INTRO", 8), loc("Song B", 100)],
+      [],
+      120,
+    );
+    expect(a.start).toBe(8);
+    expect(a.structure).toHaveLength(1); // START isn't a section
+    expect(b.start).toBeUndefined();
+  });
+
   it("does not mutate its input", () => {
     const locators = [loc("Song B", 10), loc("Song A", 0)];
     buildSetlist(locators, [], 120);

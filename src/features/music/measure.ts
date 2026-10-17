@@ -2,9 +2,8 @@ import type { Song } from "@/types/song";
 import type { TimeSignature } from "@/types/time-signature";
 import { timeSignatureAt, type TimeSignatureContext } from "./time-signature";
 
-/** Where the chart's bar 1 sits: the first section, or the song locator if it has none. */
-export const chartStart = (song: Song) =>
-  song.structure.at(0)?.timelineLocation ?? song.timelineLocation;
+/** Where the chart's bar 1 sits: the song's (optional) START locator, else the song locator. */
+export const chartStart = (song: Song) => song.start ?? song.timelineLocation;
 
 /** Measures spanned by `beats` quarter-note beats in `timeSignature`. */
 const measuresIn = (beats: number, timeSignature: TimeSignature) =>
@@ -26,7 +25,7 @@ function measuresBetween(ctx: TimeSignatureContext, song: Song, from: number, to
 
 /**
  * Fractional measure of `beat`, counted from the chart's start rather than the
- * song locator. Beats inside the count-in (before the first section) come back
+ * song locator. Beats inside the count-in (before the chart start) come back
  * negative, so callers can tell "not started yet" from measure 0.
  */
 export function calculateMeasure(ctx: TimeSignatureContext, song: Song, beat: number) {
