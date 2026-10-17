@@ -6,7 +6,7 @@
 export interface ScorePartData {
   name: string;
   instrumentName: string;
-  isVisible: 'true' | 'false';
+  isVisible: "true" | "false";
 }
 
 export interface ScoreExcerptData {
@@ -52,8 +52,7 @@ export interface Positions {
   pageSize: { height: number; width: number };
 }
 
-export type InputFileFormat =
-  | 'mscz' | 'mscx' | 'mxl' | 'musicxml' | 'xml' | 'midi';
+export type InputFileFormat = "mscz" | "mscx" | "mxl" | "musicxml" | "xml" | "midi";
 
 /** The runtime instance returned by WebMscore.load(). Methods are all async. */
 export interface WebMscoreInstance {
@@ -65,7 +64,7 @@ export interface WebMscoreInstance {
   measurePositions(): Promise<Positions>;
   saveXml(): Promise<string>;
   /** Save the current excerpt (part) as a standalone MSCZ/MSCX. */
-  saveMsc(format?: 'mscz' | 'mscx'): Promise<Uint8Array>;
+  saveMsc(format?: "mscz" | "mscx"): Promise<Uint8Array>;
   saveSvg(pageNumber?: number, drawPageBackground?: boolean): Promise<string>;
   destroy(soft?: boolean): void;
 }
@@ -78,4 +77,22 @@ export interface WebMscoreStatic {
     fonts?: Uint8Array[],
     doLayout?: boolean,
   ): Promise<WebMscoreInstance>;
+}
+
+/** webmscore excerpt id used for the whole, un-split score. */
+export const FULL_SCORE_PART_ID = -1;
+
+/** In-memory product of a bake, before it's written to the cache. */
+export interface BakedPartData {
+  id: number;
+  name: string;
+  /** SVG strings, one per page */
+  pages: string[];
+  positions: Positions;
+}
+
+export interface BakeResult {
+  parts: BakedPartData[];
+  /** full-score uncompressed MusicXML */
+  musicXml: string;
 }

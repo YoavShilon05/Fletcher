@@ -6,25 +6,27 @@
 //
 // Runs automatically via the predev/prebuild npm hooks. Idempotent.
 
-import { cpSync, existsSync, mkdirSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { cpSync, existsSync, mkdirSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const srcDir = join(root, 'node_modules', 'webmscore');
-const destDir = join(root, 'public', 'webmscore');
+const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+const srcDir = join(root, "node_modules", "webmscore");
+const destDir = join(root, "public", "webmscore");
 
 // The UMD entry (webmscore.js) plus the emscripten assets it loads at runtime.
 const FILES = [
-  'webmscore.js',
-  'webmscore.lib.js',
-  'webmscore.lib.wasm',
-  'webmscore.lib.mem.wasm',
-  'webmscore.lib.data',
+  "webmscore.js",
+  "webmscore.lib.js",
+  "webmscore.lib.wasm",
+  "webmscore.lib.mem.wasm",
+  "webmscore.lib.data",
 ];
 
 if (!existsSync(srcDir)) {
-  console.warn('[copy-webmscore] node_modules/webmscore not found — run `npm install` first. Skipping.');
+  console.warn(
+    "[copy-webmscore] node_modules/webmscore not found — run `npm install` first. Skipping.",
+  );
   process.exit(0);
 }
 

@@ -1,23 +1,10 @@
-import {useMemo} from "react";
-import {selectedSongAtom, setlistAtom} from "@/stores/store.ts";
-import {useAtomValue} from "jotai";
-import {ArrowRightCircle} from "lucide-react";
+import { useAtomValue } from "jotai";
+import { ArrowRightCircle } from "lucide-react";
+import { nextSongAtom, selectedSongAtom } from "@/features/setlist/atoms";
 
 export const AppHeader = () => {
-
   const selectedSong = useAtomValue(selectedSongAtom);
-  const setlist = useAtomValue(setlistAtom)
-
-  const currentSongIndex = useMemo(
-    () => setlist?.findIndex((song) => song.name === selectedSong?.name) ?? -1,
-    [setlist, selectedSong]
-  );
-  const nextSong = useMemo(
-    () => (setlist && currentSongIndex >= 0 && currentSongIndex < setlist.length - 1)
-      ? setlist[currentSongIndex + 1]
-      : undefined,
-    [setlist, currentSongIndex]
-  );
+  const nextSong = useAtomValue(nextSongAtom);
 
   return (
     <header className="flex items-center gap-4 h-30 px-6 border-b border-border/20 shrink-0">
@@ -26,7 +13,7 @@ export const AppHeader = () => {
 
       {/* Center title */}
       <div className="flex-1 min-w-0 flex justify-center">
-        <h1 className="text-center text-white font-mono text-4xl sm:text-5xl font-bold tracking-tight leading-none select-none">
+        <h1 className="text-center text-foreground font-mono text-4xl sm:text-5xl font-bold tracking-tight leading-none select-none">
           {selectedSong?.name}
         </h1>
       </div>
@@ -39,14 +26,13 @@ export const AppHeader = () => {
           <div className="min-w-0">
             <span className="uppercase tracking-wider text-sm mr-2">Next</span>
             <span className="text-xl sm:text-2xl font-semibold truncate block">
-            {nextSong.name}
-          </span>
+              {nextSong.name}
+            </span>
           </div>
         ) : (
-          <span className="text-xl sm:text-2xl font-semibold uppercase">
-          Final Song
-        </span>
+          <span className="text-xl sm:text-2xl font-semibold uppercase">Final Song</span>
         )}
       </div>
     </header>
-  );};
+  );
+};

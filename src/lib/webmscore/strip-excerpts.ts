@@ -1,4 +1,4 @@
-import { unzip, zipStore } from './zip';
+import { unzip, zipStore } from "./zip";
 
 // Force multimeasure rests OFF in a score/part style. Instrument parts collapse
 // consecutive empty bars into one numbered rest by default, which desyncs our
@@ -9,11 +9,14 @@ export function disableMultiMeasureRests(mscx: string): string {
   if (/<createMultiMeasureRests>/.test(mscx)) {
     return mscx.replace(
       /<createMultiMeasureRests>[^<]*<\/createMultiMeasureRests>/g,
-      '<createMultiMeasureRests>0</createMultiMeasureRests>',
+      "<createMultiMeasureRests>0</createMultiMeasureRests>",
     );
   }
   // No explicit setting — inject one into the (first) <Style> block.
-  return mscx.replace('<Style>', '<Style>\n      <createMultiMeasureRests>0</createMultiMeasureRests>');
+  return mscx.replace(
+    "<Style>",
+    "<Style>\n      <createMultiMeasureRests>0</createMultiMeasureRests>",
+  );
 }
 
 // MuseScore stores linked parts (excerpts) as <Excerpt> elements inside the main
@@ -32,19 +35,19 @@ export function stripExcerpts(mscz: Uint8Array): Uint8Array {
   const out: Record<string, Uint8Array> = {};
 
   for (const [name, data] of Object.entries(files)) {
-    if (name.startsWith('Excerpts/')) continue; // drop separate excerpt part files
+    if (name.startsWith("Excerpts/")) continue; // drop separate excerpt part files
 
-    if (name.endsWith('.mscx')) {
+    if (name.endsWith(".mscx")) {
       let xml = decoder.decode(data);
       // <Excerpt> blocks are never nested, so a non-greedy match is safe even
       // when an excerpt embeds a full <Score> (MuseScore 3).
-      xml = xml.replace(/[\t ]*<Excerpt[\s>][\s\S]*?<\/Excerpt>\s*/g, '');
+      xml = xml.replace(/[\t ]*<Excerpt[\s>][\s\S]*?<\/Excerpt>\s*/g, "");
       xml = disableMultiMeasureRests(xml);
       out[name] = encoder.encode(xml);
-    } else if (name === 'META-INF/container.xml') {
+    } else if (name === "META-INF/container.xml") {
       // Drop dangling rootfile references to the excerpt files we removed.
       const xml = decoder.decode(data);
-      out[name] = encoder.encode(xml.replace(/[\t ]*<rootfile[^>]*Excerpts\/[^>]*>\s*/g, ''));
+      out[name] = encoder.encode(xml.replace(/[\t ]*<rootfile[^>]*Excerpts\/[^>]*>\s*/g, ""));
     } else {
       out[name] = data;
     }

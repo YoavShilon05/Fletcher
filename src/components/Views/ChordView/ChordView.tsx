@@ -1,8 +1,9 @@
-import { useAtomValue } from 'jotai';
-import { selectedSongAtom } from '@/stores/store.ts';
-import { useChartMusicXml } from '@/hooks/useBakedChart.ts';
-import { ChordViewer } from '@/components/Views/ChordView/ChordViewer.tsx';
-import { Centered, ScoreSurface, useScoreView } from '@/components/Views/ScoreView.tsx';
+import { useAtomValue } from "jotai";
+import { ChordViewer } from "@/components/Views/ChordView/ChordViewer";
+import { Centered, ScoreSurface } from "@/components/Views/ScoreView";
+import { useScoreView } from "@/components/Views/useScoreView";
+import { useChartMusicXml } from "@/features/chart/useBakedChart";
+import { selectedSongAtom } from "@/features/setlist/atoms";
 
 export const ChordView = () => {
   const song = useAtomValue(selectedSongAtom);

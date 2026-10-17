@@ -1,8 +1,16 @@
 @keyframes beat-pulse {
-  0%   { background-color: rgba(255, 107, 53, 0.02); }
-  8%   { background-color: rgba(255, 107, 53, 0.23); }
-  60%   { background-color: rgba(255, 107, 53, 0.07); }
-  100% { background-color: rgba(255, 107, 53, 0); }
+  0% {
+    background-color: rgba(255, 107, 53, 0.02);
+  }
+  8% {
+    background-color: rgba(255, 107, 53, 0.23);
+  }
+  60% {
+    background-color: rgba(255, 107, 53, 0.07);
+  }
+  100% {
+    background-color: rgba(255, 107, 53, 0);
+  }
 }
 
 .beat-flash {

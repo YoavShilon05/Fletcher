@@ -3,17 +3,7 @@
 // playing measure, and need the same bounded-scroll layout — only what they draw
 // inside differs.
 
-import { ReactNode } from 'react';
-import { useAtomValue } from 'jotai';
-import {
-  chartZoomAtom,
-  currentBeatAtom,
-  followMeasureAtom,
-} from '@/stores/store.ts';
-import { useBakedChart } from '@/hooks/useBakedChart.ts';
-import { calculateMeasure } from '@/utils/calc-current-measure.ts';
-import type { BakedChart } from '@/interfaces/baked-chart.ts';
-import type { Song } from '@/interfaces/song.ts';
+import type { ReactNode } from "react";
 
 /** Full-bleed placeholder for the loading / missing / error states. */
 export function Centered({ children }: { children: ReactNode }) {
@@ -22,53 +12,6 @@ export function Centered({ children }: { children: ReactNode }) {
       <p className="text-gray-500">{children}</p>
     </div>
   );
-}
-
-export type ScoreViewState =
-  /** Nothing to draw — render `placeholder` (null means render nothing at all). */
-  | { ready: false; placeholder: ReactNode }
-  | {
-      ready: true;
-      chart: BakedChart;
-      /** 0-indexed measure currently playing; undefined through the count-in. */
-      activeMeasure: number | undefined;
-      /** Toolbar zoom multiplier, on top of each view's own base scale. */
-      zoom: number;
-      follow: boolean;
-    };
-
-/**
- * Resolve everything a score view needs from the selected song, collapsing the
- * chart's non-ready states into a ready-to-render placeholder.
- */
-export function useScoreView(song: Song | undefined): ScoreViewState {
-  const chartState = useBakedChart(song);
-  const beat = useAtomValue(currentBeatAtom);
-  const zoom = useAtomValue(chartZoomAtom);
-  const follow = useAtomValue(followMeasureAtom);
-
-  if (!song) return { ready: false, placeholder: null };
-  if (chartState.status === 'missing')
-    return { ready: false, placeholder: <Centered>Chart not found!</Centered> };
-  if (chartState.status === 'error')
-    return {
-      ready: false,
-      placeholder: <Centered>Failed to load chart: {chartState.error}</Centered>,
-    };
-  if (chartState.status !== 'ready')
-    return { ready: false, placeholder: <Centered>Preparing chart…</Centered> };
-
-  // Measures run negative through the count-in — nothing to highlight until the
-  // chart starts.
-  const measure = Math.floor(calculateMeasure(beat, song));
-
-  return {
-    ready: true,
-    chart: chartState.chart,
-    activeMeasure: measure >= 0 ? measure : undefined,
-    zoom,
-    follow,
-  };
 }
 
 interface ScoreSurfaceProps {

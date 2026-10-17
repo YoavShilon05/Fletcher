@@ -1,40 +1,25 @@
-import { Play } from 'lucide-react';
-import {useAtomValue, useAtom} from "jotai";
-import {
-  currentSectionAtom,
-  currentBeatAtom,
-  selectedSongAtom,
-  currentlyPlayingAtom
-} from "@/stores/store.ts";
-import {useSnapSelection} from "@/hooks/useSnapSelection.ts";
-import {SongSection} from "@/interfaces/song-section.ts";
-import {sendOsc} from "@/hooks/useOsc.ts";
-import {useSyncToPlayback} from "@/hooks/useSyncToPlayback.ts";
+import { Play } from "lucide-react";
+import { useAtomValue, useSetAtom } from "jotai";
+import { currentBeatAtom, isPlayingAtom } from "@/features/live/atoms";
+import { selectSectionAtom } from "@/features/setlist/actions";
+import { currentSectionAtom, selectedSongAtom } from "@/features/setlist/atoms";
+
+/** Fallback beat transition while the song's tempo is unknown, in ms. */
+const UNKNOWN_TEMPO_BEAT_MS = 150;
 
 export const SongStructure = () => {
-
-  const selectedSong = useAtomValue(selectedSongAtom)
-  const currentlyPlaying = useAtomValue(currentlyPlayingAtom)
-  const [currentSection, setCurrentSection] = useAtom(currentSectionAtom);
+  const selectedSong = useAtomValue(selectedSongAtom);
+  const currentlyPlaying = useAtomValue(isPlayingAtom);
+  const currentSection = useAtomValue(currentSectionAtom);
   const currentBeat = useAtomValue(currentBeatAtom);
-  const structure = selectedSong?.structure || []
-
-  useSnapSelection()
-  useSyncToPlayback()
-
-  const onSectionSelect = (section: SongSection): void => {
-    if (currentlyPlaying) return;
-    setCurrentSection(section)
-    sendOsc(`/live/song/jump_to`, [section.timelineLocation]);
-    sendOsc(`/live/song/set/start_time`, [section.timelineLocation]);
-  }
+  const selectSection = useSetAtom(selectSectionAtom);
+  const structure = selectedSong?.structure ?? [];
 
   // Map each section's timelineLocation onto a 0–100% range so vertical
   // spacing reflects actual section length rather than being uniform.
   const startLocation = structure[0]?.timelineLocation ?? 0;
-  const endLocation = selectedSong?.end
-    ?? structure[structure.length - 1]?.timelineLocation
-    ?? startLocation;
+  const endLocation =
+    selectedSong?.end ?? structure[structure.length - 1]?.timelineLocation ?? startLocation;
   const totalDuration = Math.max(endLocation - startLocation, 1); // avoid /0 for 1-section songs
 
   const getTopPercent = (timelineLocation: number): number =>
@@ -47,7 +32,11 @@ export const SongStructure = () => {
 
   // Beat-to-beat interval drives the CSS transition duration so the line/dot
   // glide continuously between discrete beat updates instead of snapping.
-  const msPerBeat = currentlyPlaying ? (selectedSong?.tempo ? (60 / selectedSong.tempo) * 1000 : 150) : 0;
+  const msPerBeat = !currentlyPlaying
+    ? 0
+    : selectedSong?.tempo
+      ? (60 / selectedSong.tempo) * 1000
+      : UNKNOWN_TEMPO_BEAT_MS;
 
   return (
     <aside className="w-48 h-full min-h-0 flex flex-col bg-background border-r border-border font-mono p-4 select-none">
@@ -67,7 +56,7 @@ export const SongStructure = () => {
             className="absolute left-2.5 top-4 w-[1px] bg-primary/70 pointer-events-none ease-linear"
             style={{
               height: `calc(${progressPercent}% * (100% - 2rem) / 100%)`,
-              transitionProperty: 'height',
+              transitionProperty: "height",
               transitionDuration: `${msPerBeat}ms`,
             }}
           />
@@ -82,28 +71,32 @@ export const SongStructure = () => {
             return (
               <button
                 key={`${section.name}-${idx}`}
-                onClick={() => onSectionSelect?.(section)}
+                onClick={() => selectSection(section)}
                 style={{ top: `${topPercent}%` }}
                 className="group absolute left-0 -translate-y-1/2 flex items-center gap-3 text-left w-full cursor-pointer focus:outline-none transition-colors"
               >
                 {/* Indicator Node */}
                 <div
                   className={`w-5 h-5 rounded-sm flex items-center justify-center border transition-all z-10 bg-background
-                    ${isActive
-                    ? 'border-primary text-primary shadow-[0_0_8px_var(--juke-glow)]'
-                    : 'border-border text-muted group-hover:border-muted-foreground'
-                  }`}
+                    ${
+                      isActive
+                        ? "border-primary text-primary shadow-[0_0_8px_var(--juke-glow)]"
+                        : "border-border text-muted group-hover:border-muted-foreground"
+                    }`}
                 >
-                  <Play className={`h-2.5 w-2.5 fill-current transition-transform ${isActive ? 'scale-100' : 'scale-0 group-hover:scale-75 text-muted-foreground'}`} />
+                  <Play
+                    className={`h-2.5 w-2.5 fill-current transition-transform ${isActive ? "scale-100" : "scale-0 group-hover:scale-75 text-muted-foreground"}`}
+                  />
                 </div>
 
                 {/* Section Name label */}
                 <span
                   className={`text-sm capitalize tracking-wide transition-colors truncate
-                    ${isActive
-                    ? 'text-foreground font-bold'
-                    : 'text-card-foreground group-hover:text-muted-foreground'
-                  }`}
+                    ${
+                      isActive
+                        ? "text-foreground font-bold"
+                        : "text-card-foreground group-hover:text-muted-foreground"
+                    }`}
                 >
                   {section.name}
                 </span>
@@ -117,7 +110,7 @@ export const SongStructure = () => {
               className="absolute left-2.5 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_6px_var(--juke-glow)] pointer-events-none z-20 ease-linear"
               style={{
                 top: `${progressPercent}%`,
-                transitionProperty: 'top',
+                transitionProperty: "top",
                 transitionDuration: `${msPerBeat}ms`,
               }}
             />

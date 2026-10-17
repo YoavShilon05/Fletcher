@@ -1,4 +1,4 @@
-import { unzip, zipStore } from './zip';
+import { unzip, zipStore } from "./zip";
 
 // MuseScore 4.4+ serializes a key signature as `<concertKey>N</concertKey>`
 // (plus `<actualKey>` on transposing parts) inside each `<KeySig>`. webmscore is
@@ -18,7 +18,7 @@ export function convertKeySignatures(mscx: string): string {
     const concert = block.match(/<concertKey>(-?\d+)<\/concertKey>/);
     const value = actual?.[1] ?? concert?.[1];
     if (value === undefined) return block; // custom/symbolic key sig — leave alone
-    return block.replace('<KeySig>', `<KeySig>\n            <accidental>${value}</accidental>`);
+    return block.replace("<KeySig>", `<KeySig>\n            <accidental>${value}</accidental>`);
   });
 }
 
@@ -43,10 +43,14 @@ export function convertHarmonies(mscx: string): string {
     // What the Harmony already carries at the top level, with every nested
     // <harmonyInfo> removed — otherwise the payload we're about to hoist would
     // read as "already present" and we'd skip it.
-    const direct = block.replace(/<harmonyInfo>[\s\S]*?<\/harmonyInfo>/g, '');
+    const direct = block.replace(/<harmonyInfo>[\s\S]*?<\/harmonyInfo>/g, "");
 
     const hoisted: string[] = [];
-    for (const [from, to] of [['root', 'root'], ['bass', 'base'], ['name', 'name']] as const) {
+    for (const [from, to] of [
+      ["root", "root"],
+      ["bass", "base"],
+      ["name", "name"],
+    ] as const) {
       // Don't clobber a value the Harmony already states directly, so a
       // hand-edited or mixed-version file keeps its outer spelling.
       if (new RegExp(`<${to}>`).test(direct)) continue;
@@ -56,7 +60,7 @@ export function convertHarmonies(mscx: string): string {
     if (!hoisted.length) return block;
 
     // The original `<harmonyInfo>` stays put — MS3 ignores tags it can't read.
-    return block.replace('<Harmony>', `<Harmony>\n            ${hoisted.join('\n            ')}`);
+    return block.replace("<Harmony>", `<Harmony>\n            ${hoisted.join("\n            ")}`);
   });
 }
 
@@ -70,7 +74,7 @@ export function normalizeMscz(mscz: Uint8Array): Uint8Array {
   const out: Record<string, Uint8Array> = {};
 
   for (const [name, data] of Object.entries(files)) {
-    if (name.endsWith('.mscx')) {
+    if (name.endsWith(".mscx")) {
       out[name] = encoder.encode(convertHarmonies(convertKeySignatures(decoder.decode(data))));
     } else {
       out[name] = data;

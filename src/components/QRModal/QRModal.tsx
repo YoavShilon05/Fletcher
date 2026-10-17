@@ -9,14 +9,14 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { AlertCircle } from "lucide-react";
-import { isTauri } from "@/hooks/useOsc.ts";
+import { isHost } from "@/lib/osc/transport";
 
 /** The URL other devices should open to join this session. */
 async function getJoinUrl(): Promise<string | undefined> {
   // Followers are *already* being served by the band server, so the page's own
   // origin is exactly the address to share — and `invoke` doesn't exist here,
   // which is why the modal used to come up empty on a phone.
-  if (!isTauri) return window.location.origin;
+  if (!isHost) return window.location.origin;
 
   try {
     // Host: the local IP the server is reachable at, which the window's own
@@ -33,17 +33,23 @@ interface QRModalProps {
 }
 
 export const QRModal = ({ open, onOpenChange }: QRModalProps) => {
-  const [url, setUrl] = useState<string | undefined>();
-  const [loading, setLoading] = useState(false);
+  // Re-resolved on every open (the network may have changed); undefined = loading.
+  const [result, setResult] = useState<{ url?: string }>();
 
   useEffect(() => {
     if (!open) return;
 
-    setLoading(true);
-    getJoinUrl()
-      .then(setUrl)
-      .finally(() => setLoading(false));
+    let cancelled = false;
+    getJoinUrl().then((url) => {
+      if (!cancelled) setResult({ url });
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [open]);
+
+  const loading = result === undefined;
+  const url = result?.url;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -56,9 +62,7 @@ export const QRModal = ({ open, onOpenChange }: QRModalProps) => {
         </DialogHeader>
 
         <div className="flex flex-col items-center justify-center gap-4 py-4 min-h-[220px]">
-          {loading && (
-            <p className="text-sm text-muted-foreground">Getting address...</p>
-          )}
+          {loading && <p className="text-sm text-muted-foreground">Getting address...</p>}
 
           {!loading && url && (
             <>
@@ -72,9 +76,7 @@ export const QRModal = ({ open, onOpenChange }: QRModalProps) => {
           {!loading && !url && (
             <div className="flex flex-col items-center gap-2 text-destructive text-center">
               <AlertCircle className="h-8 w-8" />
-              <p className="text-sm font-medium">
-                Couldn't determine the local network address.
-              </p>
+              <p className="text-sm font-medium">Couldn't determine the local network address.</p>
               <p className="text-xs text-muted-foreground">
                 Make sure you're connected to a network and try again.
               </p>

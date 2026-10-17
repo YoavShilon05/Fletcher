@@ -1,10 +1,11 @@
-import { selectedPartIdAtom, selectedSongAtom } from '@/stores/store.ts';
-import { useAtom, useAtomValue } from 'jotai';
-import { useChartPart } from '@/hooks/useBakedChart.ts';
-import { SheetViewer } from '@/components/Views/ChartView/SheetViewer.tsx';
-import { Centered, ScoreSurface, useScoreView } from '@/components/Views/ScoreView.tsx';
-import { FULL_SCORE_PART_ID, type BakedPart } from '@/interfaces/baked-chart.ts';
-import { useMemo } from 'react';
+import { useAtom, useAtomValue } from "jotai";
+import { SheetViewer } from "@/components/Views/ChartView/SheetViewer";
+import { Centered, ScoreSurface } from "@/components/Views/ScoreView";
+import { useScoreView } from "@/components/Views/useScoreView";
+import { selectedPartIdAtom } from "@/features/chart/atoms";
+import type { BakedPart } from "@/features/chart/types";
+import { resolvePartId, useChartPart } from "@/features/chart/useBakedChart";
+import { selectedSongAtom } from "@/features/setlist/atoms";
 
 function PartSelector({
   parts,
@@ -44,12 +45,7 @@ export const ChartView = () => {
   const chart = state.ready ? state.chart : undefined;
 
   // Persisted part may not exist in this chart — fall back to the full score.
-  const effectivePartId = useMemo(() => {
-    if (!chart) return partId;
-    return chart.manifest.parts.some((p) => p.id === partId)
-      ? partId
-      : chart.manifest.parts[0]?.id ?? FULL_SCORE_PART_ID;
-  }, [chart, partId]);
+  const effectivePartId = chart ? resolvePartId(chart, partId) : partId;
 
   const partData = useChartPart(chart, effectivePartId);
 

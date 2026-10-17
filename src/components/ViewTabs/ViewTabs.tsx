@@ -1,22 +1,23 @@
-import {Tabs, TabsList, TabsTrigger} from "@/components/ui/tabs";
-import {ViewType} from "@/interfaces/view-type.ts";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { VIEW_TYPES, type ViewType } from "@/types/view-type";
 
 interface ViewTabsProps {
   currentView: ViewType;
   onViewChange: (view: ViewType) => void;
 }
 
-const VIEWS: ViewType[] = ['Title', 'Click', 'Chords', 'Chart'];
+const isViewType = (value: unknown): value is ViewType =>
+  (VIEW_TYPES as readonly unknown[]).includes(value);
 
 export const ViewTabs = ({ currentView, onViewChange }: ViewTabsProps) => {
   return (
     <Tabs
       value={currentView}
-      onValueChange={(value) => onViewChange(value as ViewType)}
+      onValueChange={(value) => isViewType(value) && onViewChange(value)}
       className="w-full shrink-0"
     >
       <TabsList className="w-full grid grid-cols-4 h-auto gap-1 rounded-md border border-border bg-background/60 p-1">
-        {VIEWS.map((view) => (
+        {VIEW_TYPES.map((view) => (
           <TabsTrigger
             key={view}
             value={view}

@@ -1,0 +1,8 @@
+dist
+public
+src-tauri
+src-osc
+src/components/ui
+package-lock.json
+README.md
+TODO.md

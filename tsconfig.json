@@ -1,6 +1,8 @@
 {
   "compilerOptions": {
-    "typeRoots": ["./src/types"],
+    // Don't auto-include every @types package (notably @types/node, which is
+    // for the Vite config only): browser code gets DOM types and vite/client.
+    "types": [],
 
     "baseUrl": ".",
     "paths": {
@@ -15,7 +17,6 @@
 
     /* Bundler mode */
     "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,

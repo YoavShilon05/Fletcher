@@ -1,62 +1,48 @@
-import {useAtomValue} from "jotai";
-import {currentBeatAtom, currentlyPlayingAtom, selectedSongAtom} from "@/stores/store.ts";
-import {getTimeSignature} from "@/utils/get-time-signature.ts";
-import {calculateMeasure} from "@/utils/calc-current-measure.ts";
-import {Separator} from "@/components/ui/separator.tsx";
+import { useAtomValue } from "jotai";
+import { TempoFooter } from "@/components/Views/TempoFooter";
+import { currentBeatAtom, isPlayingAtom } from "@/features/live/atoms";
+import { calculateMeasure } from "@/features/music/measure";
+import { timeSignatureAt, timeSignatureContextAtom } from "@/features/music/time-signature";
+import { selectedSongAtom } from "@/features/setlist/atoms";
 
 export const ClickView = () => {
-  const selectedSong = useAtomValue(selectedSongAtom)
-  const isPlaying = useAtomValue(currentlyPlayingAtom);
-
-  //todo: comnsider non-4 denominators
-
+  const selectedSong = useAtomValue(selectedSongAtom);
+  const isPlaying = useAtomValue(isPlayingAtom);
   const currentBeat = useAtomValue(currentBeatAtom);
-  const timeSignature = getTimeSignature(currentBeat, selectedSong);
+  const timeSignatures = useAtomValue(timeSignatureContextAtom);
 
-  // Measures run negative through the count-in, so wrap into [0, numerator].
-  const beatInBar = (beats: number) =>
-    ((Math.round(beats) % timeSignature.numerator) + timeSignature.numerator) % timeSignature.numerator;
+  // TODO: consider non-4 denominators
+  const { numerator } = timeSignatureAt(timeSignatures, selectedSong, currentBeat);
 
-  const activeBeat = isPlaying ? (
-    selectedSong
-      ? beatInBar(calculateMeasure(currentBeat, selectedSong) * timeSignature.numerator)
-      : beatInBar(currentBeat)
-    ) : null
+  // Measures run negative through the count-in, so wrap into [0, numerator).
+  const beatInBar = (beats: number) => ((Math.round(beats) % numerator) + numerator) % numerator;
 
-  const circleCount = timeSignature.numerator
+  const activeBeat = !isPlaying
+    ? null
+    : selectedSong
+      ? beatInBar(calculateMeasure(timeSignatures, selectedSong, currentBeat) * numerator)
+      : beatInBar(currentBeat);
 
   return (
     <div className="font-mono relative h-full w-full">
       <div className="flex justify-center w-full">
-        <div className="fixed top-1/2 -translate-y-1/2 flex flex-col items-center w-3/5">
+        <div className="absolute top-1/2 -translate-y-1/2 flex flex-col items-center w-3/5">
           <div className="flex justify-evenly items-center gap-2 w-full">
-            {Array.from({ length: circleCount }).map((_, index) => {
-              const isActive = activeBeat === index;
-              return (
-                <div
-                  key={index}
-                  className={`w-[min(4rem,7vw)] h-[min(4rem,7vw)] rounded-full border-2 border-primary transition-all duration-150 ${
-                    isActive
-                      ? "bg-primary shadow-[0_0_12px_var(--primary)]"
-                      : "bg-transparent"
-                  }`}
-                />
-              );
-            })}
+            {Array.from({ length: numerator }, (_, index) => (
+              <div
+                key={index}
+                className={`w-[min(4rem,7vw)] h-[min(4rem,7vw)] rounded-full border-2 border-primary transition-all duration-150 ${
+                  activeBeat === index
+                    ? "bg-primary shadow-[0_0_12px_var(--primary)]"
+                    : "bg-transparent"
+                }`}
+              />
+            ))}
           </div>
         </div>
       </div>
 
-      {selectedSong?.tempo && (
-        <div className="flex justify-center w-full">
-          <div className="fixed bottom-[10vh] flex flex-col items-center w-1/6 min-w-fit">
-            <div className="text-muted-foreground text-4xl tracking-widest my-6 whitespace-nowrap">
-              {selectedSong.tempo} BPM
-            </div>
-            <Separator />
-          </div>
-        </div>
-      )}
+      {selectedSong?.tempo ? <TempoFooter tempo={selectedSong.tempo} /> : null}
     </div>
   );
 };

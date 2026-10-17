@@ -1,8 +1,13 @@
-import { loadWebMscore } from './loader';
-import { normalizeMscz } from './normalize-mscz';
-import { stripExcerpts } from './strip-excerpts';
-import type { WebMscoreInstance, WebMscoreStatic } from './types';
-import { FULL_SCORE_PART_ID, type BakeResult, type BakedPartData } from '@/interfaces/baked-chart';
+import { loadWebMscore } from "./loader";
+import { normalizeMscz } from "./normalize-mscz";
+import { stripExcerpts } from "./strip-excerpts";
+import {
+  FULL_SCORE_PART_ID,
+  type BakeResult,
+  type BakedPartData,
+  type WebMscoreInstance,
+  type WebMscoreStatic,
+} from "./types";
 
 // Renders one excerpt (or the full score when id === -1) to SVG pages + a
 // measure-position manifest. setExcerptId switches which excerpt every
@@ -27,7 +32,9 @@ async function bakePart(
   const positions = await score.measurePositions();
   // Measure-box count vs. the song's real measures reveals multimeasure-rest
   // folding: a folded part has fewer boxes than the full score.
-  console.info(`[bake]   part "${name}" (id ${id}): ${pages.length} page(s), ${positions.elements.length} measure box(es)`);
+  console.info(
+    `[bake]   part "${name}" (id ${id}): ${pages.length} page(s), ${positions.elements.length} measure box(es)`,
+  );
   return { id, name, pages, positions };
 }
 
@@ -67,7 +74,7 @@ async function bakeInstrumentParts(
 ): Promise<BakedPartData[]> {
   try {
     const stripped = stripExcerpts(msczBytes);
-    const score = await WebMscore.load('mscz', stripped, [], true);
+    const score = await WebMscore.load("mscz", stripped, [], true);
     try {
       // If excerpts survive the strip, the regex didn't match this MuseScore
       // format — generateExcerpts() would no-op and we'd keep the stale parts.
@@ -79,13 +86,13 @@ async function bakeInstrumentParts(
       await score.generateExcerpts();
       const parts = await bakeAllExcerpts(score);
       if (parts.length > 0) return parts;
-      throw new Error('excerpt strip produced no parts');
+      throw new Error("excerpt strip produced no parts");
     } finally {
       score.destroy();
     }
   } catch (err) {
-    console.warn('[bake] .mscz excerpt strip failed; falling back to MusicXML round-trip', err);
-    const score = await WebMscore.load('musicxml', new TextEncoder().encode(musicXml), [], true);
+    console.warn("[bake] .mscz excerpt strip failed; falling back to MusicXML round-trip", err);
+    const score = await WebMscore.load("musicxml", new TextEncoder().encode(musicXml), [], true);
     try {
       await score.generateExcerpts();
       return await bakeAllExcerpts(score);
@@ -113,7 +120,7 @@ export async function bakeMscz(msczBytes: Uint8Array): Promise<BakeResult> {
   // raw zip), taken before the load consumes the normalized bytes.
   const msczForParts = normalized.slice();
 
-  const score = await WebMscore.load('mscz', normalized, [], true);
+  const score = await WebMscore.load("mscz", normalized, [], true);
 
   try {
     const meta = await score.metadata();
@@ -128,7 +135,7 @@ export async function bakeMscz(msczBytes: Uint8Array): Promise<BakeResult> {
     const musicXml = await score.saveXml();
 
     const parts: BakedPartData[] = [];
-    const full = await bakePart(score, FULL_SCORE_PART_ID, 'Full Score');
+    const full = await bakePart(score, FULL_SCORE_PART_ID, "Full Score");
     if (full) parts.push(full);
 
     // If the file defines ANY parts, honour them verbatim — their layout and

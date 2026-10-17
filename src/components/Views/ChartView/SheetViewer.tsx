@@ -1,7 +1,7 @@
-import { useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { useFollowScroll } from '@/hooks/useFollowScroll.ts';
-import type { Positions } from '@/lib/webmscore/types';
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useFollowScroll } from "@/features/chart/useFollowScroll";
+import type { Positions } from "@/lib/webmscore/types";
 
 interface Props {
   /** Pre-rendered SVG page strings, in page order (from the bake). */
@@ -81,7 +81,7 @@ export function SheetViewer({ pages, positions, activeMeasure, zoom = 1, follow 
             width: scaledPageWidth,
             height: scaledPageHeight,
             marginBottom: i < pages.length - 1 ? PAGE_GAP : 0,
-            overflow: 'hidden',
+            overflow: "hidden",
           }}
         >
           <div
@@ -89,7 +89,7 @@ export function SheetViewer({ pages, positions, activeMeasure, zoom = 1, follow 
               width: pageWidth,
               height: positions.pageSize.height,
               transform: `scale(${scale})`,
-              transformOrigin: '0 0',
+              transformOrigin: "0 0",
             }}
             dangerouslySetInnerHTML={{ __html: svg }}
           />
@@ -110,7 +110,7 @@ export function SheetViewer({ pages, positions, activeMeasure, zoom = 1, follow 
   useFollowScroll(
     scrollRef,
     follow,
-    [highlightRect?.x, highlightRect?.y, highlightRect?.w],
+    highlightRect ? `${highlightRect.x},${highlightRect.y},${highlightRect.w}` : undefined,
     () => highlightRect,
   );
 
@@ -127,9 +127,9 @@ export function SheetViewer({ pages, positions, activeMeasure, zoom = 1, follow 
               top: highlightRect.y,
               width: highlightRect.w,
               height: highlightRect.h,
-              backgroundColor: 'rgba(250, 204, 21, 0.25)', // yellow-400/25
-              outline: '2px solid rgba(250, 204, 21, 0.7)',
-              boxShadow: '0 0 14px rgba(250, 204, 21, 0.35)',
+              backgroundColor: "var(--chart-highlight-fill)",
+              outline: "2px solid var(--chart-highlight-outline)",
+              boxShadow: "0 0 14px var(--chart-highlight-glow)",
             }}
           />
         )}

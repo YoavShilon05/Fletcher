@@ -1,4 +1,4 @@
-import { inflateSync } from 'fflate';
+import { inflateSync } from "fflate";
 
 // Minimal ZIP reader/writer for MuseScore .mscz manipulation. fflate's unzipSync
 // rejects some MuseScore-produced archives with "invalid zip data" (e.g. Zip64),
@@ -34,7 +34,7 @@ export function unzip(data: Uint8Array): Record<string, Uint8Array> {
       break;
     }
   }
-  if (eocd < 0) throw new Error('zip: EOCD not found');
+  if (eocd < 0) throw new Error("zip: EOCD not found");
 
   let cdCount = u16(data, eocd + 10);
   let cdOffset = u32(data, eocd + 16);
@@ -75,9 +75,18 @@ export function unzip(data: Uint8Array): Record<string, Uint8Array> {
         const fieldSize = u16(data, ep + 2);
         let fp = ep + 4;
         if (fieldTag === 0x0001) {
-          if (uncompSize === 0xffffffff) { uncompSize = u64(data, fp); fp += 8; }
-          if (compSize === 0xffffffff) { compSize = u64(data, fp); fp += 8; }
-          if (localOff === 0xffffffff) { localOff = u64(data, fp); fp += 8; }
+          if (uncompSize === 0xffffffff) {
+            uncompSize = u64(data, fp);
+            fp += 8;
+          }
+          if (compSize === 0xffffffff) {
+            compSize = u64(data, fp);
+            fp += 8;
+          }
+          if (localOff === 0xffffffff) {
+            localOff = u64(data, fp);
+            fp += 8;
+          }
         }
         ep += 4 + fieldSize;
       }
@@ -85,7 +94,7 @@ export function unzip(data: Uint8Array): Record<string, Uint8Array> {
 
     // The central dir's extra field can differ from the local one, so re-read the
     // local header to find where the entry's data actually begins.
-    if (u32(data, localOff) !== LOC) throw new Error('zip: bad local header');
+    if (u32(data, localOff) !== LOC) throw new Error("zip: bad local header");
     const dataStart = localOff + 30 + u16(data, localOff + 26) + u16(data, localOff + 28);
     const comp = data.subarray(dataStart, dataStart + compSize);
 
@@ -168,8 +177,14 @@ export function zipStore(files: Record<string, Uint8Array>): Uint8Array {
 
   const out = new Uint8Array(cdOffset + cdSize + eocd.length);
   let o = 0;
-  for (const chunk of locals) { out.set(chunk, o); o += chunk.length; }
-  for (const chunk of centrals) { out.set(chunk, o); o += chunk.length; }
+  for (const chunk of locals) {
+    out.set(chunk, o);
+    o += chunk.length;
+  }
+  for (const chunk of centrals) {
+    out.set(chunk, o);
+    o += chunk.length;
+  }
   out.set(eocd, o);
   return out;
 }

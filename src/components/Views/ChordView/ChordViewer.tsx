@@ -1,16 +1,16 @@
 // A small custom lead-sheet grid built from the chord symbols present in the
 // MusicXML (see extract-chords.ts), not from note analysis.
 
-import { useMemo, useRef } from 'react';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { cn } from '@/lib/utils';
-import { Centered } from '@/components/Views/ScoreView.tsx';
-import { useFollowScroll } from '@/hooks/useFollowScroll.ts';
-import { parseChordsFromMusicXml, type MeasureChords } from '@/utils/extract-chords';
+import { useMemo, useRef } from "react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
+import { Centered } from "@/components/Views/ScoreView";
+import { parseChordsFromMusicXml, type MeasureChords } from "@/features/chart/extract-chords";
+import { useFollowScroll } from "@/features/chart/useFollowScroll";
 
 interface Props {
   content: string;
-  /** 0-indexed, matches OSMD's MeasureList indexing (same convention as SheetViewer) */
+  /** 0-indexed playing measure (same convention as SheetViewer) */
   activeMeasure?: number;
   /** Toolbar zoom. Sets how many bars share a row — not a pixel size. */
   zoom?: number;
@@ -31,7 +31,7 @@ const MIN_COLUMNS = 1;
 const MAX_COLUMNS = 16;
 
 // Bar shape, as width : height. Wider than tall, like a bar of music.
-const CELL_ASPECT = '8 / 5';
+const CELL_ASPECT = "8 / 5";
 
 /**
  * Type is sized in `cqw` — a percentage of the bar's own width — so it tracks
@@ -59,14 +59,17 @@ export function ChordViewer({ content, activeMeasure, zoom = 1.0, follow = true 
   // row doesn't scroll.
   const viewportRef = useRef<HTMLDivElement>(null);
   const cellRefs = useRef<(HTMLDivElement | null)[]>([]);
-  useFollowScroll(viewportRef, follow, [activeMeasure], () => {
+  useFollowScroll(viewportRef, follow, activeMeasure, () => {
     const viewport = viewportRef.current;
     const cell = activeMeasure == null ? null : cellRefs.current[activeMeasure];
     if (!viewport || !cell) return null;
 
     // The grid never scrolls sideways (cells reflow), so only Y is needed.
     return {
-      y: cell.getBoundingClientRect().top - viewport.getBoundingClientRect().top + viewport.scrollTop,
+      y:
+        cell.getBoundingClientRect().top -
+        viewport.getBoundingClientRect().top +
+        viewport.scrollTop,
     };
   });
 
@@ -94,12 +97,14 @@ export function ChordViewer({ content, activeMeasure, zoom = 1.0, follow = true 
           return (
             <div
               key={m.measureIndex}
-              ref={(el) => { cellRefs.current[m.measureIndex] = el; }}
+              ref={(el) => {
+                cellRefs.current[m.measureIndex] = el;
+              }}
               className={cn(
-                'relative overflow-hidden rounded-sm border transition-colors duration-300',
-                isActive ? 'border-yellow-400 bg-yellow-400/25' : 'border-neutral-200',
+                "relative overflow-hidden rounded-sm border transition-colors duration-300",
+                isActive ? "border-yellow-400 bg-yellow-400/25" : "border-neutral-200",
               )}
-              style={{ aspectRatio: CELL_ASPECT, containerType: 'inline-size' }}
+              style={{ aspectRatio: CELL_ASPECT, containerType: "inline-size" }}
             >
               <span
                 className="absolute left-[3cqw] top-[2cqw] leading-none text-neutral-400"
@@ -119,7 +124,10 @@ export function ChordViewer({ content, activeMeasure, zoom = 1.0, follow = true 
                 )}
 
                 {m.chords.map((c, i) => (
-                  <span key={i} className="inline-flex items-baseline font-semibold leading-none text-neutral-600">
+                  <span
+                    key={i}
+                    className="inline-flex items-baseline font-semibold leading-none text-neutral-600"
+                  >
                     <span style={{ fontSize: fontSize(22, 0.5, 3, fit) }}>{c.root}</span>
                     {!c.isNoChord && c.quality && (
                       <span style={{ fontSize: fontSize(13, 0.4, 1.75, fit) }}>{c.quality}</span>
