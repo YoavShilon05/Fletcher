@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { exists, mkdir, readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { FULL_SCORE_PART_ID, type BakeResult, type Positions } from "@/lib/webmscore/types";
-import type { ChartIndex, ChartManifest } from "./types";
+import type { ChartIndex, ChartManifest, ChartRenderer } from "./types";
 
 // ── Keys & relative paths (shared by host disk and follower URLs) ────────────
 
@@ -22,12 +22,22 @@ async function sha256Hex(bytes: Uint8Array): Promise<string> {
 
 // Bump whenever the bake output shape or logic changes, so previously-cached
 // bakes (keyed only by source bytes) are invalidated and regenerated.
-const BAKE_VERSION = 16;
+const BAKE_VERSION = 17;
 
-/** Stable per-source key: sanitized name + short content hash + bake version. */
-export async function computeSongKey(songName: string, msczBytes: Uint8Array): Promise<string> {
+const RENDERER_TAG: Record<ChartRenderer, string> = { musescore: "ms", webmscore: "wm" };
+
+/**
+ * Stable per-source key: sanitized name + short content hash + bake version +
+ * renderer. The renderer is part of the key so a fallback (webmscore) bake is
+ * superseded by a MuseScore one as soon as MuseScore is available.
+ */
+export async function computeSongKey(
+  songName: string,
+  msczBytes: Uint8Array,
+  renderer: ChartRenderer,
+): Promise<string> {
   const hash = (await sha256Hex(msczBytes)).slice(0, 8);
-  return `${sanitizeName(songName)}-${hash}-v${BAKE_VERSION}`;
+  return `${sanitizeName(songName)}-${hash}-v${BAKE_VERSION}-${RENDERER_TAG[renderer]}`;
 }
 
 function partDirName(id: number): string {
@@ -97,6 +107,7 @@ export async function writeBake(
   songKey: string,
   songName: string,
   sourceHash: string,
+  renderer: ChartRenderer,
   result: BakeResult,
 ): Promise<ChartManifest> {
   const dir = await songDir(songKey);
@@ -105,6 +116,7 @@ export async function writeBake(
     songKey,
     songName,
     sourceHash,
+    renderer,
     parts: result.parts.map((p) => ({
       id: p.id,
       name: p.name,

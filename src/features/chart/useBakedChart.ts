@@ -6,10 +6,12 @@ import { filePathAtom } from "@/features/live/atoms";
 import { band } from "@/lib/osc/live-api";
 import { isHost } from "@/lib/osc/transport";
 import { getDirname } from "@/lib/path";
+import { bakeWithMuseScore, findMuseScore } from "@/lib/musescore/bake";
 import { bakeMscz } from "@/lib/webmscore/bake";
-import { FULL_SCORE_PART_ID, type Positions } from "@/lib/webmscore/types";
+import { FULL_SCORE_PART_ID, type BakeResult, type Positions } from "@/lib/webmscore/types";
 import { chartReadyTickAtom } from "./atoms";
-import type { BakedChart, ChartManifest } from "./types";
+import { withMeasureMaps } from "./measure-map";
+import type { BakedChart, ChartManifest, ChartRenderer } from "./types";
 import {
   computeSongKey,
   fetchIndex,
@@ -100,6 +102,37 @@ function memoResolve(
   return existing;
 }
 
+// Reuse this renderer's disk bake of these exact bytes, or bake and cache it now.
+async function bakeOrReuse(
+  songName: string,
+  bytes: Uint8Array,
+  renderer: ChartRenderer,
+  bake: () => Promise<BakeResult>,
+): Promise<ChartManifest> {
+  const songKey = await computeSongKey(songName, bytes, renderer);
+  const cached = await readCachedManifest(songKey);
+  if (cached) return cached;
+
+  const result = withMeasureMaps(await bake());
+  return writeBake(songKey, songName, songKey, renderer, result);
+}
+
+// Prefer the installed MuseScore (the real engine, every MuseScore 4 feature);
+// fall back to the bundled webmscore when it's missing or its bake fails.
+async function bakeHostChart(songName: string, path: string, bytes: Uint8Array) {
+  const museScore = await findMuseScore().catch(() => null);
+  if (museScore) {
+    try {
+      return await bakeOrReuse(songName, bytes, "musescore", () => bakeWithMuseScore(path));
+    } catch (err) {
+      console.error(`[bake] MuseScore failed for "${songName}"; falling back to webmscore`, err);
+    }
+  } else {
+    console.warn("[bake] MuseScore 4 not found; rendering with webmscore (reduced fidelity)");
+  }
+  return bakeOrReuse(songName, bytes, "webmscore", () => bakeMscz(bytes));
+}
+
 // Host: find <alsDir>/charts/<song>.mscz, reuse the disk bake or create it, then
 // tell followers it's fetchable.
 async function resolveHostChart(songName: string, alsPath: string): Promise<BakedChart | null> {
@@ -107,17 +140,11 @@ async function resolveHostChart(songName: string, alsPath: string): Promise<Bake
   if (!(await exists(path))) return null;
 
   const bytes = await readFile(path);
-  const songKey = await computeSongKey(songName, bytes);
-
-  let manifest = await readCachedManifest(songKey);
-  if (!manifest) {
-    const result = await bakeMscz(bytes);
-    manifest = await writeBake(songKey, songName, songKey, result);
-  }
+  const manifest = await bakeHostChart(songName, path, bytes);
 
   // Announce every session (cheap, cached server-side) so late-joining followers
   // and followers on this song learn the key even if the bake predates them.
-  band.chartReady(songName, songKey);
+  band.chartReady(songName, manifest.songKey);
   return makeBakedChart(manifest, hostIo);
 }
 
@@ -219,6 +246,32 @@ export function useChartPart(chart: BakedChart | undefined, partId: number) {
 
   // Only hand back data loaded for *this* chart/part, never a previous one's.
   return result?.chart === chart && result?.id === id ? result?.data : undefined;
+}
+
+/** Load just the measure positions for one part of a resolved chart. */
+export function useChartPositions(chart: BakedChart | undefined, partId: number) {
+  const id = chart ? resolvePartId(chart, partId) : undefined;
+  const [result, setResult] = useState<{ chart: BakedChart; id: number; positions?: Positions }>();
+
+  useEffect(() => {
+    if (!chart || id === undefined) return;
+
+    let cancelled = false;
+    chart
+      .loadPositions(id)
+      .then((positions) => {
+        if (!cancelled) setResult({ chart, id, positions });
+      })
+      .catch(() => {
+        if (!cancelled) setResult({ chart, id, positions: undefined });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [chart, id]);
+
+  return result?.chart === chart && result?.id === id ? result?.positions : undefined;
 }
 
 /** Load the full-score MusicXML of a resolved chart (for chord extraction). */

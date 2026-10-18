@@ -11,6 +11,12 @@ export interface BakedPart {
   pageSize: { width: number; height: number };
 }
 
+/**
+ * What engraved a chart: the host's installed MuseScore Studio (full fidelity),
+ * or the bundled webmscore WASM (a MuseScore 3.6 port) when it isn't installed.
+ */
+export type ChartRenderer = "musescore" | "webmscore";
+
 /** Small, cheap-to-transfer index of a baked chart. Written as manifest.json. */
 export interface ChartManifest {
   /** filesystem/url-safe key: `<sanitized song name>-<short source hash>` */
@@ -18,6 +24,8 @@ export interface ChartManifest {
   songName: string;
   /** hash of the source .mscz bytes — changes force a rebake */
   sourceHash: string;
+  /** absent on bakes from before MuseScore rendering (always webmscore) */
+  renderer?: ChartRenderer;
   parts: BakedPart[];
 }
 

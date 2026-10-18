@@ -1,4 +1,5 @@
 mod band_server;
+mod musescore;
 
 use std::net::UdpSocket;
 use rosc::{OscPacket, OscMessage, OscType, encoder};
@@ -105,7 +106,10 @@ pub fn run() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![send_osc, get_band_server_address, broadcast_message, get_chart_cache_dir])
+        .invoke_handler(tauri::generate_handler![
+            send_osc, get_band_server_address, broadcast_message, get_chart_cache_dir,
+            musescore::musescore_path, musescore::musescore_bake,
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

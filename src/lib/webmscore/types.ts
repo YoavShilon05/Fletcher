@@ -50,6 +50,13 @@ export interface Positions {
   elements: PositionElement[];
   events: PositionEvent[];
   pageSize: { height: number; width: number };
+  /**
+   * Played measure (as counted along the timeline: repeats unrolled) → index
+   * into `elements`, or -1 for none. Added by Fletcher at bake time (see
+   * features/chart/measure-map.ts); absent on old bakes, where the identity
+   * mapping applies.
+   */
+  measures?: number[];
 }
 
 export type InputFileFormat = "mscz" | "mscx" | "mxl" | "musicxml" | "xml" | "midi";
