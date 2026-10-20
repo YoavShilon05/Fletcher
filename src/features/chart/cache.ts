@@ -22,7 +22,7 @@ async function sha256Hex(bytes: Uint8Array): Promise<string> {
 
 // Bump whenever the bake output shape or logic changes, so previously-cached
 // bakes (keyed only by source bytes) are invalidated and regenerated.
-const BAKE_VERSION = 17;
+const BAKE_VERSION = 19;
 
 const RENDERER_TAG: Record<ChartRenderer, string> = { musescore: "ms", webmscore: "wm" };
 
