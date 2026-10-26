@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { elementIndexFor } from "@/features/chart/measure-map";
 import { useFollowScroll } from "@/features/chart/useFollowScroll";
@@ -49,8 +49,26 @@ function measureRectFor(
   };
 }
 
+// MuseScore (and webmscore) number each page's SVG defs — clipPath ids used to
+// break TAB staff lines around fret numbers — starting fresh from 1. Pages are
+// independent files on disk, but Fletcher inlines several at once into one DOM
+// via dangerouslySetInnerHTML, where ids are document-global: page 2's "id=1"
+// collides with page 1's, so every `url(#1)` resolves to whichever element won
+// the collision — usually the wrong page's clip geometry, which doesn't
+// overlap the line it's supposed to unmask, so the line vanishes entirely
+// (numbers are unaffected since they don't reference these ids). Rewriting
+// every id and every url(#id)/href="#id" with a page-unique prefix before
+// mounting keeps each page's defs scoped to itself.
+export function namespaceSvgIds(svg: string, prefix: string): string {
+  return svg
+    .replace(/\bid="(\d+)"/g, `id="${prefix}-$1"`)
+    .replace(/url\(#(\d+)\)/g, `url(#${prefix}-$1)`)
+    .replace(/href="#(\d+)"/g, `href="#${prefix}-$1"`);
+}
+
 export function SheetViewer({ pages, positions, activeMeasure, zoom = 1, follow = true }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const instanceId = useId();
 
   // Width available for the sheet, tracked so pages fit-to-width responsively.
   const [containerWidth, setContainerWidth] = useState(0);
@@ -87,10 +105,10 @@ export function SheetViewer({ pages, positions, activeMeasure, zoom = 1, follow 
             marginBottom: i < pages.length - 1 ? PAGE_GAP : 0,
             overflow: "hidden",
           }}
-          dangerouslySetInnerHTML={{ __html: svg }}
+          dangerouslySetInnerHTML={{ __html: namespaceSvgIds(svg, `${instanceId}-${i}`) }}
         />
       )),
-    [pages, scaledPageWidth, scaledPageHeight],
+    [pages, scaledPageWidth, scaledPageHeight, instanceId],
   );
 
   const highlightRect =

@@ -16,7 +16,7 @@
 
 use std::ffi::OsStr;
 use std::fs::{self, File};
-use std::io::{Read, Seek, SeekFrom};
+use std::io::{Cursor, Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::sync::Mutex;
@@ -24,6 +24,8 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use base64::Engine;
 use serde::{Deserialize, Serialize};
+use zip::write::SimpleFileOptions;
+use zip::{ZipArchive, ZipWriter};
 
 /// Overrides auto-detection: absolute path to a MuseScore 4+ executable.
 const PATH_ENV_VAR: &str = "FLETCHER_MUSESCORE";
@@ -342,16 +344,60 @@ fn path_str(path: &Path) -> String {
     path.to_string_lossy().to_string()
 }
 
+// MuseScore 4.7 bug: a TAB staff type saved with `<showRests>0</showRests>`
+// (the default for guitar-style "Simple" TAB presets — rests just aren't
+// drawn on the tab, which is normal engraving practice) stops the *notation*
+// staff linked to it from drawing rest glyphs too, from the second system
+// onward. Every measure still has its `<Rest>`, it just goes invisible —
+// both staves render blank past the first line, as if the part vanished.
+// `showRests=1` (what non-"Simple" TAB presets already default to, e.g. the
+// bundled bass preset) doesn't trip the bug, so we flip it in a scratch copy
+// before baking. The only visible cost is TAB rests become visible too,
+// which is a far smaller change than losing the staff's content.
+fn patch_show_rests(mscz: &[u8]) -> Result<Vec<u8>, String> {
+    let mut archive =
+        ZipArchive::new(Cursor::new(mscz)).map_err(|e| format!("unreadable .mscz: {e}"))?;
+    let mut out = ZipWriter::new(Cursor::new(Vec::new()));
+    let options = SimpleFileOptions::default();
+
+    for i in 0..archive.len() {
+        let mut entry = archive.by_index(i).map_err(|e| e.to_string())?;
+        let name = entry
+            .name()
+            .map_err(|e| format!("bad zip entry name: {e}"))?
+            .into_owned();
+        let mut bytes = Vec::new();
+        entry.read_to_end(&mut bytes).map_err(|e| e.to_string())?;
+
+        if name.ends_with(".mscx") {
+            if let Ok(text) = String::from_utf8(bytes.clone()) {
+                bytes = text
+                    .replace("<showRests>0</showRests>", "<showRests>1</showRests>")
+                    .into_bytes();
+            }
+        }
+
+        out.start_file(&name, options).map_err(|e| e.to_string())?;
+        out.write_all(&bytes).map_err(|e| e.to_string())?;
+    }
+
+    out.finish()
+        .map_err(|e| e.to_string())
+        .map(|cursor| cursor.into_inner())
+}
+
 fn bake(exe: &Path, mscz_path: &Path) -> Result<MuseScoreBake, String> {
     let _guard = BAKE_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     let work = WorkDir::new()?;
     let dir = &work.0;
 
-    // A private copy: plain ASCII path for the converter, and immune to the
-    // user re-saving the chart mid-bake.
+    // A private copy: plain ASCII path for the converter, immune to the user
+    // re-saving the chart mid-bake, and with the showRests bug worked around.
     let score = dir.join("score.mscz");
-    fs::copy(mscz_path, &score)
-        .map_err(|e| format!("couldn't read {}: {e}", mscz_path.display()))?;
+    let original =
+        fs::read(mscz_path).map_err(|e| format!("couldn't read {}: {e}", mscz_path.display()))?;
+    let patched = patch_show_rests(&original)?;
+    fs::write(&score, patched).map_err(|e| e.to_string())?;
 
     // Pass 1: split into standalone part files.
     let parts_json = dir.join("parts.json");
@@ -463,6 +509,51 @@ mod tests {
         assert_eq!(major_version_in("MuseScore Studio 5.app"), Some(5));
         assert_eq!(major_version_in("4.7.5"), Some(4));
         assert_eq!(major_version_in("MuseScore"), None);
+    }
+
+    fn zip_with(files: &[(&str, &str)]) -> Vec<u8> {
+        let mut writer = ZipWriter::new(Cursor::new(Vec::new()));
+        for (name, contents) in files {
+            writer
+                .start_file(*name, SimpleFileOptions::default())
+                .unwrap();
+            writer.write_all(contents.as_bytes()).unwrap();
+        }
+        writer.finish().unwrap().into_inner()
+    }
+
+    fn file_contents(zip: &[u8], name: &str) -> String {
+        let mut archive = ZipArchive::new(Cursor::new(zip)).unwrap();
+        let mut out = String::new();
+        archive
+            .by_name(name)
+            .unwrap()
+            .read_to_string(&mut out)
+            .unwrap();
+        out
+    }
+
+    #[test]
+    fn patch_show_rests_flips_only_tab_staff_rests() {
+        let mscx = "<StaffType group=\"tablature\"><showRests>0</showRests></StaffType>\
+                    <StaffType group=\"pitched\"><showRests>1</showRests></StaffType>";
+        let zip = zip_with(&[
+            ("score.mscx", mscx),
+            ("score_style.mss", "<showRests>0</showRests>"),
+        ]);
+
+        let patched = patch_show_rests(&zip).unwrap();
+
+        assert_eq!(
+            file_contents(&patched, "score.mscx"),
+            "<StaffType group=\"tablature\"><showRests>1</showRests></StaffType>\
+             <StaffType group=\"pitched\"><showRests>1</showRests></StaffType>",
+        );
+        // Non-.mscx entries (e.g. the style sheet) are left untouched.
+        assert_eq!(
+            file_contents(&patched, "score_style.mss"),
+            "<showRests>0</showRests>"
+        );
     }
 
     // End-to-end against a real install:
