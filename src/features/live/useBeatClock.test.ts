@@ -57,4 +57,61 @@ describe("beatAfter", () => {
   it("stays monotonic when the clock offset puts us before the anchor", () => {
     expect(beatAfter(SWITCH, anchor({ startBeat: 10 }), -500).beat).toBe(9);
   });
+
+  // Live writes an instant switch as two points on the same beat: the outgoing
+  // value then the incoming one. Taking the first left the clock a breakpoint
+  // behind for the rest of the song.
+  describe("instant switches, written as coincident points", () => {
+    const INSTANT = [
+      { time: -63072000, tempo: 122 },
+      { time: 8, tempo: 122 },
+      { time: 8, tempo: 244 },
+    ];
+
+    it("takes the incoming value, not the outgoing one", () => {
+      // 8 beats at 122 take ~3934ms; 1 further beat at 244 takes ~246ms.
+      const { beat, tempo } = beatAfter(INSTANT, anchor({ tempo: 122 }), 3934.4 + 245.9);
+      expect(beat).toBeCloseTo(9, 3);
+      expect(tempo).toBe(244);
+    });
+
+    it("adopts a step the anchor lands exactly on", () => {
+      expect(beatAfter(INSTANT, anchor({ startBeat: 8, tempo: 244 }), 0)).toEqual({
+        beat: 8,
+        tempo: 244,
+      });
+    });
+
+    it("walks the real set's envelope", () => {
+      // Straight out of 26.10.26.als: 122, then steps at 1004.25 / 1166 / 1198.
+      const real = [
+        { time: -63072000, tempo: 122 },
+        { time: 1004.25, tempo: 122 },
+        { time: 1004.25, tempo: 154 },
+        { time: 1166, tempo: 154 },
+        { time: 1166, tempo: 77 },
+        { time: 1198, tempo: 77 },
+        { time: 1198, tempo: 154 },
+      ];
+      const from = anchor({ startBeat: 1000, tempo: 122 });
+      const ms = (beats: number, bpm: number) => (beats * 60_000) / bpm;
+
+      // Start at beat 1000, so each leg is the run up to the next step.
+      const toFirst = ms(4.25, 122);
+      const toSecond = toFirst + ms(1166 - 1004.25, 154);
+      const toThird = toSecond + ms(1198 - 1166, 77);
+
+      expect(beatAfter(real, from, toFirst).beat).toBeCloseTo(1004.25, 6);
+      expect(beatAfter(real, from, toFirst).tempo).toBe(154);
+      expect(beatAfter(real, from, toSecond).beat).toBeCloseTo(1166, 6);
+      expect(beatAfter(real, from, toSecond).tempo).toBe(77);
+      expect(beatAfter(real, from, toThird).beat).toBeCloseTo(1198, 6);
+      expect(beatAfter(real, from, toThird).tempo).toBe(154);
+
+      // Halfway through the 77 BPM stretch, a quarter of the way in beats.
+      const { beat, tempo } = beatAfter(real, from, toSecond + ms(8, 77));
+      expect(beat).toBeCloseTo(1174, 6);
+      expect(tempo).toBe(77);
+    });
+  });
 });

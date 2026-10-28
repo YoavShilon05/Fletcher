@@ -13,6 +13,22 @@ import {
 const MS_PER_MINUTE = 60_000;
 
 /**
+ * Collapse breakpoints sharing a beat down to the last one.
+ *
+ * An instant tempo switch is two points at the same beat — the outgoing value
+ * and the incoming one — and from that beat onwards it's the second that plays.
+ * Expects `changes` sorted by time, as the .als reader leaves them.
+ */
+function steps(changes: TempoChangeEvent[]): TempoChangeEvent[] {
+  const collapsed: TempoChangeEvent[] = [];
+  for (const change of changes) {
+    if (collapsed.at(-1)?.time === change.time) collapsed[collapsed.length - 1] = change;
+    else collapsed.push(change);
+  }
+  return collapsed;
+}
+
+/**
  * Where the playhead is `elapsedMs` after `anchor`, and the tempo it is running
  * at there.
  *
@@ -32,8 +48,9 @@ export function beatAfter(
   let tempo = anchor.tempo;
   let remainingMs = elapsedMs;
 
-  for (const change of changes) {
-    if (change.time <= beat) continue;
+  for (const change of steps(changes)) {
+    // Strictly before, so a step landing exactly on `beat` still takes effect.
+    if (change.time < beat) continue;
     const msToChange = ((change.time - beat) * MS_PER_MINUTE) / tempo;
     if (msToChange > remainingMs) break;
     remainingMs -= msToChange;

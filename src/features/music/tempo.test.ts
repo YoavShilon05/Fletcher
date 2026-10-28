@@ -67,6 +67,15 @@ describe("tempoAt", () => {
     expect(tempoAt(ctx, song({ tempo: 120 }), 100)).toBe(75);
   });
 
+  it("takes the incoming value where an instant switch shares a beat", () => {
+    // Live writes a step as the outgoing value then the incoming one.
+    const ctx = tempoCtx({
+      changes: [BASELINE, { time: 150, tempo: 90 }, { time: 150, tempo: 140 }],
+    });
+    expect(tempoAt(ctx, song(), 149)).toBe(90);
+    expect(tempoAt(ctx, song(), 150)).toBe(140);
+  });
+
   it("falls back to the set tempo with no song", () => {
     expect(tempoAt(tempoCtx({ global: 128 }))).toBe(128);
   });
