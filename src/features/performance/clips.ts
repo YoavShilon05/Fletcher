@@ -28,6 +28,9 @@ export const countClips = [
 /** Slot of the spoken name of a section / cue, or -1 if there isn't one. */
 export const callClipIndex = (cueName: string) => countClips.indexOf(cueName.toLowerCase());
 
+/** Is this slot one of the count-in numbers, rather than a spoken name? */
+export const isCountInClip = (slot: number) => slot < COUNT_CLIP_NUMBERS;
+
 /**
  * Clip slots on the Fletcher_Control track — navigation triggers, not spoken
  * cues. Slot index must match array index.

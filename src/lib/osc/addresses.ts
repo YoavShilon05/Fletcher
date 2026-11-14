@@ -26,6 +26,12 @@ export interface ClipTriggered {
   isTriggered: boolean;
 }
 
+/** Where a track's timeline clips sit, in beats. */
+export interface ArrangementClipTimes {
+  trackIndex: number;
+  startTimes: number[];
+}
+
 /** Messages sent by AbletonOSC (and forwarded to followers by the band server). */
 export const LIVE = {
   isPlaying: defineMessage("/live/song/get/is_playing", ([v]) => asBoolean(v)),
@@ -58,6 +64,18 @@ export const LIVE = {
   signatureNumerator: defineMessage("/live/song/get/signature_numerator", ([v]) => asNumber(v)),
   signatureDenominator: defineMessage("/live/song/get/signature_denominator", ([v]) => asNumber(v)),
   filePath: defineMessage("/live/song/get/file_path", ([v]) => asString(v)),
+  /** Reply to a build: how many clips Fletcher managed to lay down. */
+  arrangementClipsBuilt: defineMessage(
+    "/live/track/build_arrangement_clips",
+    ([trackIndex, built]) => ({ trackIndex: asNumber(trackIndex), built: asNumber(built) }),
+  ),
+  arrangementClipTimes: defineMessage(
+    "/live/track/get/arrangement_clips/start_time",
+    ([trackIndex, ...startTimes]): ArrangementClipTimes => ({
+      trackIndex: asNumber(trackIndex),
+      startTimes: startTimes.map(asNumber),
+    }),
+  ),
   clipTriggered: defineMessage(
     "/live/clip_slot/get/is_triggered",
     ([track, clip, triggered]): ClipTriggered => ({

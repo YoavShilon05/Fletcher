@@ -6,7 +6,8 @@ import { prepareControlClips, prepareCountClips } from "./clips";
 
 /**
  * Host: whenever a Fletcher track appears (created by us, by hand, or already
- * in the set), make sure its clip slots are filled.
+ * in the set), make sure its clip slots are filled. The count track's slots
+ * are what a build copies onto the timeline, so they have to be there first.
  */
 export function useFletcherTracks() {
   const store = useStore();

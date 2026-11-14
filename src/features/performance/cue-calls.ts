@@ -27,9 +27,11 @@ export function cueClipAt(song: Song, beat: number): number | null {
     return slot === -1 ? null : slot;
   }
 
-  if (Number.isInteger(distance) && distance > 1 && distance <= CALL_CUE_COUNT + 1) {
-    // distance CALL_CUE_COUNT + 1 → "1", … distance 2 → "CALL_CUE_COUNT".
-    return CALL_CUE_COUNT + 1 - distance;
+  if (Number.isInteger(distance) && distance > 0 && distance <= CALL_CUE_COUNT) {
+    // The count lands on the CALL_CUE_COUNT beats immediately before the cue:
+    // distance CALL_CUE_COUNT → "1", … distance 1 → "CALL_CUE_COUNT", so the
+    // last number is spoken on the beat before the downbeat, as a count-in is.
+    return CALL_CUE_COUNT - distance;
   }
 
   return null;

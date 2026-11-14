@@ -1,6 +1,7 @@
 // Typed wrappers for every command the host sends. Each returns the
 // underlying invoke promise; await it when ordering matters (see clips.ts).
 
+import type { CompiledCue } from "@/features/performance/compile-cues";
 import type { TempoChangeEvent } from "@/types/tempo";
 import type { TimeSignatureChangeEvent } from "@/types/time-signature";
 import { BROADCAST, LIVE_INITIAL_QUERIES, LIVE_LISTEN_ADDRESSES } from "./addresses";
@@ -39,6 +40,29 @@ export const live = {
     sendOsc("/live/clip_slot/create_clip", [track, clip, lengthBeats]),
   setClipName: (track: number, clip: number, name: string) =>
     sendOsc("/live/clip/set/name", [track, clip, name]),
+  queryArrangementClipTimes: (track: number) =>
+    sendOsc("/live/track/get/arrangement_clips/start_time", [track]),
+  clearArrangementClips: (track: number, from: number, to: number) =>
+    sendOsc("/live/track/delete_arrangement_clips", [track, from, to]),
+  /**
+   * Replace the track's timeline clips in [from, to) with copies of its session
+   * clips, one per `cues` entry. `warping` off leaves each copy at its recorded
+   * speed, out of reach of the set's tempo automation.
+   */
+  buildArrangementClips: (
+    track: number,
+    { from, to }: { from: number; to: number },
+    warping: boolean,
+    cues: CompiledCue[],
+  ) =>
+    sendOsc("/live/track/build_arrangement_clips", [
+      track,
+      from,
+      to,
+      // Sent as 0/1: AbletonOSC's bundled pythonosc doesn't decode OSC bools.
+      warping ? 1 : 0,
+      ...cues.flatMap(({ slot, beat }) => [slot, beat]),
+    ]),
   listenClipTriggered: (track: number, clip: number) =>
     sendOsc("/live/clip_slot/start_listen/is_triggered", [track, clip]),
   stopListeningClipTriggered: (track: number, clip: number) =>

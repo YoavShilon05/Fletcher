@@ -136,6 +136,69 @@ class TrackHandler(AbletonOSCHandler):
         self.osc_server.add_handler("/live/track/get/arrangement_clips/length", create_track_callback(track_get_arrangement_clip_lengths))
         self.osc_server.add_handler("/live/track/get/arrangement_clips/start_time", create_track_callback(track_get_arrangement_clip_start_times))
 
+        #--------------------------------------------------------------------------------
+        # Track: Building the arrangement.
+        #
+        # Fletcher compiles its spoken cues onto the timeline ahead of time rather
+        # than firing session clips during playback, so their timing can't drift with
+        # OSC latency or tempo automation. The whole of one song is built by a single
+        # message, so the clear and the rebuild land in the same Live tick.
+        #--------------------------------------------------------------------------------
+        def clips_within(track, start_time, end_time):
+            return [clip for clip in list(track.arrangement_clips)
+                    if clip.start_time < end_time and clip.end_time > start_time]
+
+        def track_delete_arrangement_clips(track, params: Tuple[Any]):
+            start_time, end_time = float(params[0]), float(params[1])
+            clips = clips_within(track, start_time, end_time)
+            for clip in clips:
+                track.delete_clip(clip)
+            return len(clips),
+
+        def track_build_arrangement_clips(track, params: Tuple[Any]):
+            """
+            Replace the arrangement clips in [start_time, end_time) with copies of
+            session clips, placed at given beat times.
+
+            Params: start_time, end_time, warping, then (clip_index, beat_time) pairs.
+
+            Turning `warping` off is the point of the exercise: an unwarped clip plays
+            at its recorded speed, so a tempo automation moving underneath it can no
+            longer stretch a spoken cue.
+            """
+            start_time, end_time, warping = float(params[0]), float(params[1]), bool(params[2])
+            placements = params[3:]
+
+            for clip in clips_within(track, start_time, end_time):
+                track.delete_clip(clip)
+
+            built = 0
+            for offset in range(0, len(placements) - 1, 2):
+                clip_index, beat_time = int(placements[offset]), float(placements[offset + 1])
+                if beat_time < 0:
+                    self.logger.warning("Can't build a clip before the start of the arrangement (beat %f)" % beat_time)
+                    continue
+                source = track.clip_slots[clip_index].clip
+                if source is None:
+                    self.logger.warning("Nothing in clip slot %d to build from" % clip_index)
+                    continue
+                clip = track.duplicate_clip_to_arrangement(source, beat_time)
+                if clip.is_audio_clip:
+                    #--------------------------------------------------------------------------------
+                    # `looping` is only writable while the clip is still warped, so it has to
+                    # be cleared before warping is turned off.
+                    #--------------------------------------------------------------------------------
+                    if clip.warping:
+                        clip.looping = False
+                    clip.warping = warping
+                built += 1
+            return built,
+
+        self.osc_server.add_handler("/live/track/delete_arrangement_clips",
+                                    create_track_callback(track_delete_arrangement_clips))
+        self.osc_server.add_handler("/live/track/build_arrangement_clips",
+                                    create_track_callback(track_build_arrangement_clips))
+
         def track_get_num_devices(track, _):
             return len(track.devices),
 

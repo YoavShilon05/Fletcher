@@ -5,8 +5,11 @@ import {
   SONG_SELECT_DEBOUNCE_MS,
   SONG_SWIPE_THRESHOLD_PX,
 } from "@/constants";
+import { buildSongAtom } from "@/features/performance/actions";
+import { builtSongNamesAtom, buildingSongsAtom } from "@/features/performance/atoms";
 import { selectSongAtom } from "@/features/setlist/actions";
 import { selectedSongIndexAtom, setlistAtom } from "@/features/setlist/atoms";
+import { isHost } from "@/lib/osc/transport";
 import { SongCard } from "./SongCard";
 
 export const SongSelector = () => {
@@ -17,6 +20,11 @@ export const SongSelector = () => {
   const setlist = useAtomValue(setlistAtom);
   const selectedIndex = Math.max(0, useAtomValue(selectedSongIndexAtom));
   const selectSong = useSetAtom(selectSongAtom);
+
+  // Building writes to the Live set, so only the host offers it.
+  const buildSong = useSetAtom(buildSongAtom);
+  const builtSongNames = useAtomValue(builtSongNamesAtom);
+  const buildingSongs = useAtomValue(buildingSongsAtom);
 
   // While wheeling/swiping, the highlighted card runs ahead of the real
   // selection; Live is only cued once the gesture settles.
@@ -136,7 +144,14 @@ export const SongSelector = () => {
                 </>
               )}
 
-              <SongCard song={song} status={status} onClick={() => commit(index)} />
+              <SongCard
+                song={song}
+                status={status}
+                onClick={() => commit(index)}
+                onBuild={isHost ? () => buildSong(song) : undefined}
+                built={builtSongNames.has(song.name)}
+                building={buildingSongs.includes(song.name)}
+              />
             </div>
           );
         })}

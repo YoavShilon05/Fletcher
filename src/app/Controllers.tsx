@@ -11,8 +11,8 @@ import {
 } from "@/features/live/useHostLiveSync";
 import { useLiveStateSync } from "@/features/live/useLiveStateSync";
 import { useAutoStop } from "@/features/performance/useAutoStop";
+import { useBuiltCues } from "@/features/performance/useBuiltCues";
 import { useClipControls } from "@/features/performance/useClipControls";
-import { useCueCalls } from "@/features/performance/useCueCalls";
 import { useFletcherTracks } from "@/features/performance/useFletcherTracks";
 import { useLoopSnapper } from "@/features/performance/useLoopSnapper";
 import { useSyncTempo } from "@/features/performance/useSyncTempo";
@@ -36,7 +36,7 @@ function HostControllers() {
   useBroadcastHeartbeat();
 
   useSyncTempo();
-  useCueCalls();
+  useBuiltCues();
   useAutoStop();
   useLoopSnapper();
   useClipControls();

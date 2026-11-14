@@ -17,7 +17,7 @@ describe("cueClipAt", () => {
   });
 
   it("counts in 1-2-3-4 on the beats right before the section", () => {
-    expect([131, 132, 133, 134].map((beat) => spokenAt(song(), beat))).toEqual([
+    expect([132, 133, 134, 135].map((beat) => spokenAt(song(), beat))).toEqual([
       "1",
       "2",
       "3",
@@ -25,10 +25,15 @@ describe("cueClipAt", () => {
     ]);
   });
 
+  it("finishes the count on the beat before the downbeat", () => {
+    expect(spokenAt(song(), 135)).toBe("4"); // the section lands on 136
+    expect(spokenAt(song(), 136)).toBeNull(); // nothing on the downbeat itself
+  });
+
   it("stays quiet otherwise", () => {
     expect(spokenAt(song(), 120)).toBeNull(); // too far ahead
     expect(spokenAt(song(), 130)).toBeNull(); // between the call and the count
-    expect(spokenAt(song(), 135)).toBeNull(); // the beat right before
+    expect(spokenAt(song(), 131)).toBeNull(); // still before the count starts
     expect(spokenAt(song(), 190)).toBeNull(); // no section left
   });
 

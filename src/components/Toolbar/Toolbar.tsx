@@ -1,6 +1,7 @@
 import {
   Maximize2,
-  Mic,
+  Hammer,
+  Loader2,
   Magnet,
   Sun,
   QrCode,
@@ -16,13 +17,15 @@ import { Button } from "@/components/ui/button";
 import { Toggle } from "@/components/ui/toggle";
 import { CHART_ZOOM_MAX, CHART_ZOOM_MIN, CHART_ZOOM_STEP } from "@/constants";
 import { chartZoomAtom, followMeasureAtom } from "@/features/chart/atoms";
+import { buildSetlistAtom } from "@/features/performance/actions";
 import {
+  buildingSongsAtom,
   controlTrackIndexAtom,
   countTrackIndexAtom,
-  shotCallingAtom,
   snapSelectionAtom,
 } from "@/features/performance/atoms";
 import { createFletcherTracks, deleteFletcherTracks } from "@/features/performance/clips";
+import { setlistAtom } from "@/features/setlist/atoms";
 import {
   currentViewAtom,
   fullscreenAtom,
@@ -38,12 +41,15 @@ const toolButtonClass =
 export const Toolbar = () => {
   const [snapSelection, setSnapSelection] = useAtom(snapSelectionAtom);
   const [fullscreen, setFullscreen] = useAtom(fullscreenAtom);
-  const [shotCalling, setShotCalling] = useAtom(shotCallingAtom);
   const [lightScreen, setLightScreen] = useAtom(lightScreenAtom);
   const [showQr, setShowQr] = useState<boolean>(false);
 
   const countTrackIndex = useAtomValue(countTrackIndexAtom);
   const controlTrackIndex = useAtomValue(controlTrackIndexAtom);
+  const setlist = useAtomValue(setlistAtom);
+  const buildingSongs = useAtomValue(buildingSongsAtom);
+  const buildSetlist = useSetAtom(buildSetlistAtom);
+  const building = buildingSongs.length > 0;
   const fletcherTracksExist = countTrackIndex !== -1 && controlTrackIndex !== -1;
   const toggleFletcherTracks = (create: boolean) =>
     create
@@ -108,17 +114,17 @@ export const Toolbar = () => {
         <Magnet />
       </Toggle>
 
-      {/* Shot Calling */}
-      <Toggle
-        pressed={shotCalling}
-        onPressedChange={setShotCalling}
-        title="Shot calling"
+      {/* Build the whole set's spoken cues onto the timeline */}
+      <Button
+        onClick={() => buildSetlist()}
+        disabled={building || countTrackIndex === -1 || setlist.length === 0}
+        title={building ? "Building…" : "Build the set’s cues"}
         variant="outline"
         size="lg"
         className={toolButtonClass}
       >
-        <Mic />
-      </Toggle>
+        {building ? <Loader2 className="animate-spin" /> : <Hammer />}
+      </Button>
 
       {/* Light screen */}
       <Toggle
