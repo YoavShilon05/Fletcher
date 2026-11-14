@@ -39,11 +39,14 @@ export function neighbourSection(song: Song, section: SongSection | undefined, o
 }
 
 /**
- * Every beat Live's cursor may rest on in snap mode, in timeline order: each
- * song's START marker and each of its section starts, across the whole set.
+ * Every beat Live's cursor may rest on in snap mode, in timeline order: across
+ * the whole set, each song's locator (where its count-in starts), its START
+ * marker, and each of its section starts. Songs without a START contribute
+ * their locator once.
  */
 export function snapPoints(setlist: Song[]): number[] {
   const points = setlist.flatMap((song) => [
+    song.timelineLocation,
     chartStart(song),
     ...song.structure.map((section) => section.timelineLocation),
   ]);
@@ -58,9 +61,9 @@ const pointAtOrBefore = (points: number[], beat: number) =>
   );
 
 /**
- * Where a move of the cursor from `fromBeat` to `toBeat` should land: the start
- * of the section it moved into, or — when it never left the section it came
- * from — the neighbouring section in the direction it moved.
+ * Where a move of the cursor from `fromBeat` to `toBeat` should land: the snap
+ * point it moved into, or — when it never left the one it came from — the
+ * neighbouring point in the direction it moved.
  */
 export function snapTarget(points: number[], fromBeat: number, toBeat: number) {
   if (points.length === 0) return undefined;

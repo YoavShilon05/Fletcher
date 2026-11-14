@@ -8,10 +8,11 @@ import { sectionAt, snapPoints, snapTarget, songAt } from "./sections";
 
 /**
  * Host, snap-selection mode: while stopped, every move of Live's cursor lands
- * on a section start — the section it moved into, or the neighbouring one when
- * the move stayed inside the section it came from. Snapping spans the whole
- * set, and the landing spot drives the song and section selection, since
- * playback-follow is off in this mode.
+ * on a snap point — a section start, a song's START, or a song locator (see
+ * `snapPoints`). It lands on the point it moved into, or on the neighbouring
+ * one when the move stayed between the same two points, so a nudge still
+ * advances by one. Snapping spans the whole set, and the landing spot drives
+ * the song and section selection, since playback-follow is off in this mode.
  */
 export function useSnapSelection() {
   const store = useStore();

@@ -57,13 +57,21 @@ describe("section navigation", () => {
 });
 
 describe("snap selection", () => {
-  // START at 100, sections at 104 / 136 / 168; song B's START at 300.
-  const setlist = [song(), song({ name: "B", timelineLocation: 290, start: 300, structure: [] })];
+  // A: locator 100, START 104 (count-in before it) sharing INTRO's beat,
+  // then VERSE 136 / CHORUS 168. B: locator 290, no START, no sections.
+  const setlist = [song({ start: 104 }), song({ name: "B", timelineLocation: 290, structure: [] })];
   const points = snapPoints(setlist);
 
-  it("lists every song start and section start once, in order", () => {
-    expect(points).toEqual([100, 104, 136, 168, 300]);
-    expect(snapPoints([song({ start: 104 })])).toEqual([104, 136, 168]);
+  it("lists each song locator, START and section start once, in order", () => {
+    expect(points).toEqual([100, 104, 136, 168, 290]);
+    // No START: the locator still gets on the grid, and only once.
+    expect(snapPoints([song()])).toEqual([100, 104, 136, 168]);
+  });
+
+  it("snaps between the song locator and the chart start", () => {
+    expect(snapTarget(points, 104, 102)).toBe(100); // dragged into the count-in
+    expect(snapTarget(points, 104, 100)).toBe(100);
+    expect(snapTarget(points, 100, 103)).toBe(104); // and back out of it
   });
 
   it("lands on the start of the section moved into", () => {
@@ -78,14 +86,14 @@ describe("snap selection", () => {
   });
 
   it("crosses between songs", () => {
-    expect(snapTarget(points, 168, 400)).toBe(300);
-    expect(snapTarget(points, 300, 110)).toBe(104);
+    expect(snapTarget(points, 168, 400)).toBe(290);
+    expect(snapTarget(points, 290, 110)).toBe(104);
   });
 
   it("clamps at both ends of the set", () => {
     expect(snapTarget(points, 136, 0)).toBe(100);
     expect(snapTarget(points, 100, 50)).toBe(100);
-    expect(snapTarget(points, 300, 500)).toBe(300);
+    expect(snapTarget(points, 290, 500)).toBe(290);
     expect(snapTarget([], 0, 50)).toBeUndefined();
   });
 });
