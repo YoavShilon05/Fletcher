@@ -4,7 +4,7 @@ import { trackNamesAtom } from "@/features/live/atoms";
 import { setlistAtom } from "@/features/setlist/atoms";
 import { cueRange } from "./compile-cues";
 
-/** Scrubbing the playhead (or picking a scene) snaps to section/song starts. */
+/** Moving Live's cursor snaps it to the nearest section (or song) start. */
 export const snapSelectionAtom = atom(false);
 
 /** Index of the Fletcher_Count track, or -1 if the set doesn't have one. */

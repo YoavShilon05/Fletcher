@@ -1,6 +1,7 @@
 import { useStore } from "jotai";
 import { AUTO_STOP_MARGIN } from "@/constants";
 import { isPlayingAtom } from "@/features/live/atoms";
+import { cueStartAtom } from "@/features/setlist/actions";
 import { nextSongAtom, selectedSongAtom } from "@/features/setlist/atoms";
 import { LIVE } from "@/lib/osc/addresses";
 import { live } from "@/lib/osc/live-api";
@@ -26,7 +27,7 @@ export function useAutoStop() {
 
     const nextSong = store.get(nextSongAtom);
     if (nextSong) {
-      live.setStartTime(nextSong.timelineLocation);
+      store.set(cueStartAtom, nextSong.timelineLocation);
       store.set(selectedSongAtom, nextSong);
     }
     live.stopPlaying();

@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { song } from "@/test/fixtures";
-import { neighbourSection, neighbourSong, sectionAt, sectionEnd, songAt } from "./sections";
+import {
+  neighbourSection,
+  neighbourSong,
+  sectionAt,
+  sectionEnd,
+  snapPoints,
+  snapTarget,
+  songAt,
+} from "./sections";
 
 describe("sectionAt", () => {
   it("finds the section under the playhead", () => {
@@ -45,5 +53,39 @@ describe("section navigation", () => {
   it("ends a section at the next one, or at the song's STOP", () => {
     expect(sectionEnd(s, s.structure[0])).toBe(136);
     expect(sectionEnd(s, s.structure[2])).toBe(200);
+  });
+});
+
+describe("snap selection", () => {
+  // START at 100, sections at 104 / 136 / 168; song B's START at 300.
+  const setlist = [song(), song({ name: "B", timelineLocation: 290, start: 300, structure: [] })];
+  const points = snapPoints(setlist);
+
+  it("lists every song start and section start once, in order", () => {
+    expect(points).toEqual([100, 104, 136, 168, 300]);
+    expect(snapPoints([song({ start: 104 })])).toEqual([104, 136, 168]);
+  });
+
+  it("lands on the start of the section moved into", () => {
+    expect(snapTarget(points, 104, 150)).toBe(136);
+    expect(snapTarget(points, 170, 140)).toBe(136);
+    expect(snapTarget(points, 104, 136)).toBe(136);
+  });
+
+  it("steps to the neighbour when the move stays inside one section", () => {
+    expect(snapTarget(points, 136, 150)).toBe(168);
+    expect(snapTarget(points, 150, 140)).toBe(104);
+  });
+
+  it("crosses between songs", () => {
+    expect(snapTarget(points, 168, 400)).toBe(300);
+    expect(snapTarget(points, 300, 110)).toBe(104);
+  });
+
+  it("clamps at both ends of the set", () => {
+    expect(snapTarget(points, 136, 0)).toBe(100);
+    expect(snapTarget(points, 100, 50)).toBe(100);
+    expect(snapTarget(points, 300, 500)).toBe(300);
+    expect(snapTarget([], 0, 50)).toBeUndefined();
   });
 });

@@ -1,6 +1,7 @@
 import { useAtomValue, useStore } from "jotai";
 import { useEffect, useRef } from "react";
 import { CLIP_CONTROL_SETTLE_MS } from "@/constants";
+import { cueToAtom } from "@/features/setlist/actions";
 import { currentSectionAtom, selectedSongAtom, setlistAtom } from "@/features/setlist/atoms";
 import { neighbourSection, neighbourSong } from "@/features/setlist/sections";
 import { LIVE } from "@/lib/osc/addresses";
@@ -49,8 +50,7 @@ export function useClipControls() {
     // Give Live a moment to settle the stop before moving the playhead.
     clearTimeout(cueTimeout.current);
     cueTimeout.current = setTimeout(() => {
-      live.setStartTime(target);
-      live.jumpTo(target);
+      store.set(cueToAtom, target);
     }, CLIP_CONTROL_SETTLE_MS);
   });
 

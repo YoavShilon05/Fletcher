@@ -2,13 +2,16 @@ import { useStore } from "jotai";
 import { useEffect } from "react";
 import { currentBeatAtom, isPlayingAtom } from "@/features/live/atoms";
 import { snapSelectionAtom } from "@/features/performance/atoms";
-import { live } from "@/lib/osc/live-api";
-import { currentSectionAtom, pickedSectionAtom, selectedSongAtom } from "./atoms";
-import { neighbourSection, sectionAt } from "./sections";
+import { cuedBeatAtom, cueToAtom } from "./actions";
+import { currentSectionAtom, selectedSongAtom, setlistAtom } from "./atoms";
+import { sectionAt, snapPoints, snapTarget, songAt } from "./sections";
 
 /**
- * Host, snap-selection mode: while stopped, any scrub of the playhead jumps to
- * the start of the neighbouring section in the direction it moved.
+ * Host, snap-selection mode: while stopped, every move of Live's cursor lands
+ * on a section start — the section it moved into, or the neighbouring one when
+ * the move stayed inside the section it came from. Snapping spans the whole
+ * set, and the landing spot drives the song and section selection, since
+ * playback-follow is off in this mode.
  */
 export function useSnapSelection() {
   const store = useStore();
@@ -23,19 +26,20 @@ export function useSnapSelection() {
 
       if (!store.get(snapSelectionAtom) || store.get(isPlayingAtom)) return;
 
-      const song = store.get(selectedSongAtom);
-      if (!song) return;
+      // Fletcher's own cues come back as cursor moves too — only the user's
+      // moves are worth snapping.
+      const cued = store.get(cuedBeatAtom);
+      if (cued !== undefined && Math.floor(cued) === beat) return;
 
-      // Where we were before this move: the section last snapped to / picked,
-      // else whatever was under the playhead.
-      const from = store.get(pickedSectionAtom) ?? sectionAt(song, fromBeat);
-      // Landing exactly on it is our own snap (or a click) echoing back.
-      if (!from || from.timelineLocation === beat) return;
+      const setlist = store.get(setlistAtom);
+      const target = snapTarget(snapPoints(setlist), fromBeat, beat);
+      if (target === undefined || target === beat) return;
 
-      const target = neighbourSection(song, from, beat > fromBeat ? 1 : -1) ?? from;
-      live.jumpBy(target.timelineLocation - beat);
-      live.setStartTime(target.timelineLocation);
-      store.set(currentSectionAtom, target);
+      store.set(cueToAtom, target);
+      // Song first: a section pick is keyed by the song it belongs to.
+      const song = songAt(setlist, target);
+      store.set(selectedSongAtom, song);
+      store.set(currentSectionAtom, sectionAt(song, target));
     });
   }, [store]);
 }
