@@ -1,6 +1,7 @@
 import { useStore } from "jotai";
 import { AUTO_STOP_MARGIN } from "@/constants";
 import { isPlayingAtom } from "@/features/live/atoms";
+import { chartStart } from "@/features/music/measure";
 import { cueStartAtom } from "@/features/setlist/actions";
 import { nextSongAtom, selectedSongAtom } from "@/features/setlist/atoms";
 import { LIVE } from "@/lib/osc/addresses";
@@ -27,7 +28,9 @@ export function useAutoStop() {
 
     const nextSong = store.get(nextSongAtom);
     if (nextSong) {
-      store.set(cueStartAtom, nextSong.timelineLocation);
+      // Park on the next song's START, so playback resumes at its bar 1
+      // rather than replaying its count-in.
+      store.set(cueStartAtom, chartStart(nextSong));
       store.set(selectedSongAtom, nextSong);
     }
     live.stopPlaying();
