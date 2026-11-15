@@ -1,5 +1,5 @@
 import { useAtomValue, useStore } from "jotai";
-import { useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { PLAYBACK_LOOKAHEAD_MS } from "@/constants";
 import type { PlaybackAnchor } from "@/lib/osc/addresses";
 import type { TempoChangeEvent } from "@/types/tempo";
@@ -62,19 +62,27 @@ export function beatAfter(
 }
 
 /**
- * While playing, advance `currentBeatAtom` from the wall-clock playback anchor
- * instead of waiting on Live's (UDP, jittery) beat messages. Each tick is
- * scheduled for the exact moment the next beat lands.
+ * While playing, walk the playhead forward in steps of 1/`subdivision` of a
+ * quarter note, handing `onStep` the beat each step lands on. Driven from the
+ * wall-clock playback anchor instead of Live's (UDP, jittery) beat messages,
+ * and each tick is scheduled for the exact moment the next step arrives.
  */
-export function useBeatClock() {
+export function usePlayheadSteps(subdivision: number, onStep: (beat: number) => void) {
   const store = useStore();
   const anchor = useAtomValue(playbackAnchorAtom);
   const tempoChanges = useAtomValue(tempoChangesAtom);
 
+  // Held in a ref so an unstable handler doesn't restart the clock: a fresh
+  // effect re-fires the step the playhead is already sitting on.
+  const step = useRef(onStep);
+  useEffect(() => {
+    step.current = onStep;
+  }, [onStep]);
+
   useEffect(() => {
     if (!anchor || anchor.tempo <= 0) return;
 
-    let lastBeat: number | null = null;
+    let lastStep: number | null = null;
     let timeout: ReturnType<typeof setTimeout>;
 
     const tick = () => {
@@ -86,20 +94,27 @@ export function useBeatClock() {
         PLAYBACK_LOOKAHEAD_MS -
         store.get(delayFromMothershipAtom);
       const { beat: beatFloat, tempo } = beatAfter(tempoChanges, anchor, elapsedMs);
-      const beat = Math.floor(beatFloat);
+      const steps = Math.floor(beatFloat * subdivision);
 
-      if (beat !== lastBeat) {
-        lastBeat = beat;
-        store.set(currentBeatAtom, beat);
+      if (steps !== lastStep) {
+        lastStep = steps;
+        step.current(steps / subdivision);
       }
 
       // Every tick re-derives the position from the wall clock, so a wait that
       // straddles a tempo change is corrected by the tick it lands on.
-      const msUntilNextBeat = ((beat + 1 - beatFloat) * MS_PER_MINUTE) / tempo;
-      timeout = setTimeout(tick, Math.max(msUntilNextBeat, 1));
+      const msUntilNextStep = (((steps + 1) / subdivision - beatFloat) * MS_PER_MINUTE) / tempo;
+      timeout = setTimeout(tick, Math.max(msUntilNextStep, 1));
     };
 
     tick();
     return () => clearTimeout(timeout);
-  }, [anchor, tempoChanges, store]);
+  }, [anchor, subdivision, tempoChanges, store]);
+}
+
+/** Advances `currentBeatAtom`, the app's integer quarter-note playhead. */
+export function useBeatClock() {
+  const store = useStore();
+  const setBeat = useCallback((beat: number) => store.set(currentBeatAtom, beat), [store]);
+  usePlayheadSteps(1, setBeat);
 }
